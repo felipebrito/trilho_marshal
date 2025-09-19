@@ -214,16 +214,23 @@ export function TVViewer() {
 
   // Callback para mudança de posição via UDP
   const handleUDPPositionChange = useCallback((position: number) => {
+    console.log('UDP: Recebido valor:', position, 'Modo atual:', mode);
+    
+    if (mode !== 'operation') {
+      console.log('UDP: Ignorado - não está em modo operação');
+      return;
+    }
+    
     const maxPos = getMaxPosition();
     const newPosition = Math.max(0, Math.min(maxPos, position));
     setCalibration(prev => ({ ...prev, position: newPosition }));
     console.log('UDP: Posição atualizada para', newPosition + '%');
-  }, [getMaxPosition]);
+  }, [getMaxPosition, mode]);
 
-  // Hook UDP Control
+  // Hook UDP Control - só funciona em modo operação
   const { isConnected } = useUDPControl({
     onPositionChange: handleUDPPositionChange,
-    enabled: udpEnabled
+    enabled: udpEnabled && mode === 'operation'
   });
 
   // Atualizar estado de conexão UDP
@@ -1013,8 +1020,11 @@ export function TVViewer() {
                 {udpEnabled ? 'Desativar UDP' : 'Ativar UDP'}
               </button>
               <span className="text-xs text-gray-400 self-center">
-                Envie valores 0-1 para controlar posição
+                Só funciona em modo operação
               </span>
+            </div>
+            <div className="mt-2 text-xs text-yellow-400">
+              ⚠️ UDP ativo apenas no modo operação (tecla C)
             </div>
           </div>
 
@@ -1041,7 +1051,7 @@ export function TVViewer() {
           <div className="mt-4 text-xs text-gray-400">
             <p>💡 <strong>Teclas:</strong> C = Alternar modos | R = Reset para posição ideal</p>
             <p>💡 <strong>Navegação:</strong> ← → = Movimento horizontal | Pinch/2 dedos = navegação horizontal</p>
-            <p>💡 <strong>UDP:</strong> Envie valores 0-1 para porta 8888 para controle remoto</p>
+            <p>💡 <strong>UDP:</strong> Envie valores 0-1 para porta 8888 (só em modo operação)</p>
           </div>
         </div>
       )}
