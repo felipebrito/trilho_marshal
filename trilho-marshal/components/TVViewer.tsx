@@ -174,7 +174,32 @@ export function TVViewer() {
   // Função para salvar posições dos bullets
   const saveBulletPositions = () => {
     localStorage.setItem('trilho-marshal-bullets', JSON.stringify(bullets));
-    console.log('Posições dos bullets salvas:', bullets);
+    console.log('💾 Posições dos bullets salvas:', bullets);
+  };
+
+  // Função para salvar todas as configurações (calibração + bullets)
+  const saveAllConfigurations = () => {
+    const config = { 
+      calibration, 
+      frames, 
+      bullets,
+      timestamp: new Date().toISOString()
+    };
+    localStorage.setItem('trilho-marshal-config', JSON.stringify(config));
+    console.log('💾 Configurações salvas manualmente:', config);
+    alert('✅ Configurações salvas com sucesso!');
+  };
+
+  // Função para limpar todas as configurações
+  const clearAllConfigurations = () => {
+    if (confirm('⚠️ Tem certeza que deseja limpar todas as configurações salvas?')) {
+      localStorage.removeItem('trilho-marshal-config');
+      localStorage.removeItem('trilho-marshal-bullets');
+      const idealPosition = getIdealPosition();
+      setCalibration(idealPosition);
+      console.log('🗑️ Todas as configurações foram limpas');
+      alert('🗑️ Configurações limpas! Aplicação resetada para posição ideal.');
+    }
   };
 
   // Função para carregar posições dos bullets
@@ -270,13 +295,25 @@ export function TVViewer() {
 
   // Calcular o range máximo baseado na escala atual
   const getMaxPosition = useCallback(() => {
-    if (imageDimensions.width === 0) return 100;
+    if (imageDimensions.width === 0) {
+      console.log('getMaxPosition: imageDimensions.width é 0, retornando 100');
+      return 100;
+    }
     const railWidth = Math.max(0, imageDimensions.width - 1080);
     // Ajustar o range máximo baseado na escala para manter a imagem no viewport
     const scaleFactor = calibration.scale;
     const maxPos = Math.ceil((railWidth / 1080) * 100 * scaleFactor);
     // Limitar para evitar que a imagem saia do viewport
-    return Math.min(76.8, maxPos);
+    const result = Math.min(76.8, maxPos);
+    console.log('getMaxPosition:', { 
+      imageWidth: imageDimensions.width, 
+      railWidth, 
+      scaleFactor, 
+      maxPos, 
+      result 
+    });
+    // Forçar um valor mínimo para teste
+    return Math.max(50, result);
   }, [imageDimensions.width, calibration.scale]);
 
   // Callback para mudança de posição via UDP
@@ -384,44 +421,65 @@ export function TVViewer() {
     updateFramesVisibility();
   }, [calibration, mode, frames]);
 
-  // Salvar configurações
-  useEffect(() => {
-    const config = { calibration, frames };
-    localStorage.setItem('trilho-marshal-config', JSON.stringify(config));
-  }, [calibration, frames]);
+  // Removido salvamento automático para evitar conflitos
+  // Use o botão "Salvar Posições" para salvar manualmente
+
+  // Posição ideal padrão
+  const getIdealPosition = () => ({
+    scale: 0.44,
+    offsetX: -36,
+    offsetY: -1504,
+    position: 2.1,
+    gridSize: 100,
+    showGrid: false,
+  });
 
   // Carregar configurações automaticamente
   useEffect(() => {
+    console.log('🔄 Iniciando carregamento de configurações...');
     const saved = localStorage.getItem('trilho-marshal-config');
+    
     if (saved) {
       try {
         const config = JSON.parse(saved);
-        setCalibration(prev => ({ ...prev, ...config.calibration }));
-        if (config.frames) setFrames(config.frames);
-        console.log('Configurações carregadas:', config);
+        console.log('📁 Configurações encontradas no localStorage:', config);
+        
+        // Carregar calibração
+        if (config.calibration) {
+          setCalibration(prev => ({ ...prev, ...config.calibration }));
+          console.log('✅ Calibração carregada:', config.calibration);
+        }
+        
+        // Carregar frames
+        if (config.frames) {
+          setFrames(config.frames);
+          console.log('✅ Frames carregados:', config.frames);
+        }
+        
+        // Carregar bullets
+        if (config.bullets) {
+          const bulletsWithDefaults = config.bullets.map((bullet: any) => ({
+            ...bullet,
+            size: bullet.size || 2.0,
+            color: bullet.color || '#22c55e'
+          }));
+          setBullets(bulletsWithDefaults);
+          console.log('✅ Bullets carregados:', bulletsWithDefaults);
+        }
+        
+        console.log('🎉 Todas as configurações carregadas com sucesso!');
       } catch (error) {
-        console.error('Erro ao carregar configurações:', error);
+        console.error('❌ Erro ao carregar configurações:', error);
         // Se não conseguir carregar, usa a posição ideal
-        setCalibration({
-          scale: 0.44,
-          offsetX: -36,
-          offsetY: -1504,
-          position: 2.1,
-          gridSize: 100,
-          showGrid: false,
-        });
+        const idealPosition = getIdealPosition();
+        setCalibration(idealPosition);
+        console.log('🔄 Usando posição ideal após erro de carregamento');
       }
     } else {
       // Se não há configurações salvas, usa a posição ideal
-      setCalibration({
-        scale: 0.44,
-        offsetX: -36,
-        offsetY: -1504,
-        position: 2.1,
-        gridSize: 100,
-        showGrid: false,
-      });
-      console.log('Usando posição ideal padrão');
+      const idealPosition = getIdealPosition();
+      setCalibration(idealPosition);
+      console.log('🆕 Usando posição ideal padrão (primeira vez)');
     }
   }, []);
 
@@ -939,28 +997,21 @@ export function TVViewer() {
       
       if (e.key.toLowerCase() === 'r') {
         // Reset para posição ideal
-        const resetCalibration = {
-          scale: 0.44,
-          offsetX: -36,
-          offsetY: -1504,
-          position: 2.1,
-          gridSize: 100,
-          showGrid: false,
-        };
+        const resetCalibration = getIdealPosition();
         setCalibration(resetCalibration);
-        console.log('Reset para posição ideal:', resetCalibration);
+        console.log('🔄 Reset para posição ideal:', resetCalibration);
       }
 
-      // Controle de navegação horizontal com setas
-      if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+      // Controle de navegação horizontal com teclas O e P
+      if (e.key.toLowerCase() === 'o' || e.key.toLowerCase() === 'p') {
         e.preventDefault();
-        const step = 2; // Sensibilidade do movimento
+        const step = 2; // Sensibilidade ajustada para fluidez
         const maxPos = getMaxPosition();
-        const direction = e.key === 'ArrowLeft' ? -1 : 1;
+        const direction = e.key.toLowerCase() === 'o' ? -1 : 1; // O = esquerda, P = direita
         const newPosition = Math.max(0, Math.min(maxPos, calibration.position + (step * direction)));
         
         setCalibration(prev => ({ ...prev, position: newPosition }));
-        console.log('Navegação por teclado:', { key: e.key, newPosition, maxPos });
+        console.log('TECLADO:', { key: e.key, step, maxPos, oldPos: calibration.position, newPosition });
       }
     };
 
@@ -968,47 +1019,49 @@ export function TVViewer() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [calibration.position, getMaxPosition]);
 
-  // Wheel scroll e pinch do trackpad - baseado no HTML original
-  const handleWheel = useCallback((e: WheelEvent) => {
-    e.preventDefault();
-    
-    // Pinch do trackpad (Mac) - Ctrl+scroll ou deltaX+deltaY simultâneos
-    if (e.ctrlKey || (Math.abs(e.deltaX) > 0 && Math.abs(e.deltaY) > 0)) {
-      if (mode === 'operation') {
-        // No modo operação: pinch move horizontalmente
-        const sensitivity = 0.02; // Sensibilidade reduzida para controle mais fino
-        const maxPos = getMaxPosition();
-        const newPosition = Math.max(0, Math.min(maxPos, calibration.position + e.deltaY * sensitivity));
-        setCalibration(prev => ({ ...prev, position: newPosition }));
-        console.log('Trackpad Pinch (Operação):', { deltaY: e.deltaY, newPosition });
-        return;
-      } else {
-        // No modo calibração: pinch faz zoom
-        const pinchFactor = Math.abs(e.deltaY) / 200; // Sensibilidade do pinch
-        const scaleChange = e.deltaY > 0 ? 1 + pinchFactor : 1 - pinchFactor;
-        const newScale = Math.min(4.0, Math.max(0.05, calibration.scale * scaleChange));
-        
-        console.log('Trackpad Pinch (Calibração):', { deltaY: e.deltaY, ctrlKey: e.ctrlKey, scaleChange, newScale });
-        
-        setCalibration(prev => ({ ...prev, scale: newScale }));
-        return;
-      }
-    }
-    
-    // Scroll horizontal normal
-    const sensitivity = 0.02; // Sensibilidade reduzida para controle mais fino
-    const maxPos = getMaxPosition();
-    const newPosition = Math.max(0, Math.min(maxPos, calibration.position + e.deltaY * sensitivity));
-    setCalibration(prev => ({ ...prev, position: newPosition }));
-  }, [calibration.position, calibration.scale, mode, getMaxPosition]);
 
+  // Evento wheel global - mais confiável
   useEffect(() => {
-    const tv = document.getElementById('tv');
-    if (tv) {
-      tv.addEventListener('wheel', handleWheel, { passive: false });
-      return () => tv.removeEventListener('wheel', handleWheel);
-    }
-  }, [handleWheel]);
+    const handleGlobalWheel = (e: WheelEvent) => {
+      // Só processar se o evento for no elemento TV ou seus filhos
+      const target = e.target as HTMLElement;
+      const tv = document.getElementById('tv');
+      
+      if (!tv || !tv.contains(target)) {
+        return; // Ignorar eventos fora da TV
+      }
+      
+      e.preventDefault();
+      
+      console.log('🎯 WHEEL EVENT:', { 
+        deltaY: e.deltaY, 
+        ctrlKey: e.ctrlKey, 
+        mode,
+        currentPosition: calibration.position,
+        maxPos: getMaxPosition()
+      });
+      
+      // SEMPRE aplicar movimento horizontal com sensibilidade suavizada
+      const sensitivity = 0.3; // Sensibilidade mais baixa para fluidez
+      const maxPos = getMaxPosition();
+      const oldPosition = calibration.position;
+      const newPosition = Math.max(0, Math.min(maxPos, oldPosition + e.deltaY * sensitivity));
+      
+      setCalibration(prev => ({ ...prev, position: newPosition }));
+      
+      console.log('🚀 WHEEL APLICADO:', { 
+        deltaY: e.deltaY, 
+        sensitivity,
+        oldPosition, 
+        newPosition, 
+        maxPos,
+        mudou: oldPosition !== newPosition
+      });
+    };
+    
+    window.addEventListener('wheel', handleGlobalWheel, { passive: false });
+    return () => window.removeEventListener('wheel', handleGlobalWheel);
+  }, [calibration.position, mode, getMaxPosition]);
 
   return (
     <div className="relative w-full h-screen bg-black overflow-hidden">
@@ -1109,7 +1162,7 @@ export function TVViewer() {
                     <div 
                       className="text-white font-bold"
                       style={{
-                        fontSize: `${18 / bullet.size}px`,
+                        fontSize: `${120 / bullet.size}px`,
                         transform: `scale(${1 / bullet.size})`,
                       }}
                     >
@@ -1281,13 +1334,26 @@ export function TVViewer() {
               Modo Operação (C)
             </button>
             <button
-              onClick={() => {
-                localStorage.setItem('trilho-marshal-config', JSON.stringify({ calibration, frames }));
-                alert('Preset salvo!');
-              }}
+              onClick={saveAllConfigurations}
               className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm"
             >
-              Salvar
+              Salvar Posições
+            </button>
+            <button
+              onClick={() => {
+                const idealPosition = getIdealPosition();
+                setCalibration(idealPosition);
+                console.log('🔄 Reset para posição ideal via botão');
+              }}
+              className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded text-sm"
+            >
+              Reset Ideal (R)
+            </button>
+            <button
+              onClick={clearAllConfigurations}
+              className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded text-sm"
+            >
+              Limpar Tudo
             </button>
             
             {/* Controles dos Bullets */}
@@ -1374,6 +1440,91 @@ export function TVViewer() {
                 </div>
               </div>
 
+              {/* Configuração Individual de Bullets */}
+              <div className="mt-4 p-3 bg-gray-700 rounded-lg">
+                <h4 className="text-sm font-semibold text-white mb-3">⚙️ Configuração Individual</h4>
+                <div className="max-h-60 overflow-y-auto space-y-2">
+                  {bullets.map(bullet => (
+                    <div key={bullet.id} className="bg-gray-600 p-2 rounded text-xs">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="font-semibold text-white" style={{ color: bullet.color }}>
+                          {bullet.label} ({bullet.id})
+                        </span>
+                        <div 
+                          className="w-3 h-3 rounded-full border border-white/30" 
+                          style={{ backgroundColor: bullet.color }}
+                        ></div>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="block text-gray-300 mb-1">X:</label>
+                          <input
+                            type="number"
+                            value={bullet.x}
+                            onChange={(e) => {
+                              const newX = parseInt(e.target.value) || 0;
+                              setBullets(prev => prev.map(b => 
+                                b.id === bullet.id ? { ...b, x: newX } : b
+                              ));
+                            }}
+                            className="w-full px-1 py-1 bg-gray-700 text-white text-xs rounded border border-gray-600"
+                          />
+                        </div>
+                        
+                        <div>
+                          <label className="block text-gray-300 mb-1">Y:</label>
+                          <input
+                            type="number"
+                            value={bullet.y}
+                            onChange={(e) => {
+                              const newY = parseInt(e.target.value) || 0;
+                              setBullets(prev => prev.map(b => 
+                                b.id === bullet.id ? { ...b, y: newY } : b
+                              ));
+                            }}
+                            className="w-full px-1 py-1 bg-gray-700 text-white text-xs rounded border border-gray-600"
+                          />
+                        </div>
+                        
+                        <div>
+                          <label className="block text-gray-300 mb-1">Escala:</label>
+                          <input
+                            type="range"
+                            min="0.5"
+                            max="5.0"
+                            step="0.1"
+                            value={bullet.size}
+                            onChange={(e) => {
+                              const newSize = parseFloat(e.target.value);
+                              setBullets(prev => prev.map(b => 
+                                b.id === bullet.id ? { ...b, size: newSize } : b
+                              ));
+                            }}
+                            className="w-full"
+                          />
+                          <span className="text-gray-400">{bullet.size.toFixed(1)}x</span>
+                        </div>
+                        
+                        <div>
+                          <label className="block text-gray-300 mb-1">Cor:</label>
+                          <input
+                            type="color"
+                            value={bullet.color}
+                            onChange={(e) => {
+                              setBullets(prev => prev.map(b => 
+                                b.id === bullet.id ? { ...b, color: e.target.value } : b
+                              ));
+                            }}
+                            className="w-full h-6 rounded border border-gray-600"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
               <p className="text-xs text-gray-400 mt-2">
                 Clique nos bullets para abrir carrossel com imagens da pasta correspondente
               </p>
@@ -1383,8 +1534,9 @@ export function TVViewer() {
           {/* Dicas de teclado */}
           <div className="mt-4 text-xs text-gray-400">
             <p>💡 <strong>Teclas:</strong> C = Alternar modos | R = Reset para posição ideal</p>
-            <p>💡 <strong>Navegação:</strong> ← → = Movimento horizontal | Pinch/2 dedos = navegação horizontal</p>
+            <p>💡 <strong>Navegação:</strong> O/P = Movimento horizontal | Scroll trackpad = navegação horizontal</p>
             <p>💡 <strong>UDP:</strong> Envie valores 0-1 para porta 8888 (só em modo operação)</p>
+            <p>💡 <strong>Persistência:</strong> Clique em "Salvar Posições" para salvar | "Limpar Tudo" para resetar</p>
           </div>
         </div>
       )}
