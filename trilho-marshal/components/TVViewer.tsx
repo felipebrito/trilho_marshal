@@ -5,6 +5,7 @@ import { gsap } from 'gsap';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { useUDPControl } from '@/hooks/useUDPControl';
+import FadeContent from './FadeContent';
 
 interface CalibrationData {
   scale: number;
@@ -52,6 +53,20 @@ export function TVViewer() {
     gridSize: 100,
     showGrid: false,
   });
+
+  // Configurações de animação
+  const animationConfig = {
+    modalEntry: {
+      duration: 0.3,        // Entrada do modal (mais rápido)
+      ease: "power2.out"
+    },
+    imageFade: {
+      duration: 0.4,        // Fade das imagens (mais rápido)
+      ease: "power2.out"
+    },
+    imageDelay: 0.2,        // Delay entre imagens (mais rápido)
+    stepDelay: 0.3          // Delay para indicadores (mais rápido)
+  };
   const [imageDimensions, setImageDimensions] = useState({ width: 20000, height: 4000 });
   // Bullets pulsantes - pontos redondos clicáveis
   const [bullets, setBullets] = useState<Bullet[]>([
@@ -167,8 +182,13 @@ export function TVViewer() {
 
   // Função para carregar imagens de uma pasta específica
   const loadImagesFromFolder = (folder: string): string[] => {
-    const imageFiles = ['00_bg.png', '01_ano.png', '02_texto.png', '03_imagem.png'];
-    return imageFiles.map(file => `/imagens/${folder}/${file}`);
+    // Imagens obrigatórias
+    const requiredImages = ['00_bg.png', '01_ano.png', '02_texto.png'];
+    // Imagem opcional
+    const optionalImages = ['03_imagem.png'];
+    
+    const allImages = [...requiredImages, ...optionalImages];
+    return allImages.map(file => `/imagens/${folder}/${file}`);
   };
 
   // Função para salvar posições dos bullets
@@ -586,222 +606,291 @@ export function TVViewer() {
     );
   };
 
-  // Componente especial para Frame A - Animação sequencial
-  const FrameAAnimation = () => {
-    const [currentStep, setCurrentStep] = useState(0);
-    const animationRef = useRef<HTMLDivElement>(null);
+        // Componente especial para Frame A - Animação sequencial
+        const FrameAAnimation = () => {
+          const [currentStep, setCurrentStep] = useState(0);
+          const animationRef = useRef<HTMLDivElement>(null);
 
-    const images = [
-      '/00_bg.png',   // Fundo
-      '/01_ano.png',  // Ano (1990)
-      '/02_texto.png' // Texto
-    ];
+          const images = [
+            '/00_bg.png',   // Fundo
+            '/01_ano.png',  // Ano (1990)
+            '/02_texto.png' // Texto
+          ];
 
-    useEffect(() => {
-      if (!animationRef.current) return;
+          useEffect(() => {
+            if (!animationRef.current) return;
 
-      // Animação de entrada do modal
-      gsap.fromTo(animationRef.current, 
-        { opacity: 0, scale: 0.8 },
-        { opacity: 1, scale: 1, duration: 0.5, ease: "power2.out" }
-      );
+            // Animação de entrada do modal
+            gsap.fromTo(animationRef.current, 
+              { opacity: 0, scale: 0.8 },
+              { 
+                opacity: 1, 
+                scale: 1, 
+                duration: 0.3, 
+                ease: "power2.out" 
+              }
+            );
 
-      // Sequência de animação das imagens
-      const timeline = gsap.timeline({ delay: 0.5 });
+            // Sequência de steps para indicadores
+            const stepTimeline = gsap.timeline({ delay: 0.3 });
+            stepTimeline.call(() => setCurrentStep(1), [], 0.2);
+            stepTimeline.call(() => setCurrentStep(2), [], 0.4);
+            stepTimeline.call(() => setCurrentStep(3), [], 0.6);
 
-      // Primeira imagem (fundo) - aparece imediatamente
-      timeline.to(`.frame-a-bg`, {
-        opacity: 1,
-        duration: 0.8,
-        ease: "power2.out"
-      });
+          }, []);
 
-      // Segunda imagem (ano) - aparece após 1 segundo
-      timeline.to(`.frame-a-ano`, {
-        opacity: 1,
-        duration: 0.8,
-        ease: "power2.out"
-      }, "-=0.4");
+          return (
+            <div ref={animationRef} className="relative w-full h-full flex items-center justify-center" style={{ backgroundColor: '#fff1ef' }}>
+              {/* Efeito de blur ao redor da imagem */}
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent blur-sm"></div>
+              </div>
+              
+              {/* Imagem de fundo - visível imediatamente */}
+              <img
+                src={images[0]}
+                alt="Background"
+                className="absolute inset-0 w-full h-full object-contain z-10"
+              />
+              
+              {/* Imagem do ano com animação CSS */}
+              <div 
+                className="absolute inset-0 w-full h-full z-20"
+                style={{
+                  opacity: currentStep >= 1 ? 1 : 0,
+                  filter: currentStep >= 1 ? 'blur(0px)' : 'blur(20px)',
+                  transform: currentStep >= 1 ? 'scale(1)' : 'scale(1.05)',
+                  transition: 'opacity 0.4s ease-out, filter 0.4s ease-out, transform 0.4s ease-out'
+                }}
+              >
+                <img
+                  src={images[1]}
+                  alt="Ano 1990"
+                  className="w-full h-full object-contain"
+                />
+              </div>
+              
+              {/* Imagem do texto com animação CSS */}
+              <div 
+                className="absolute inset-0 w-full h-full z-30"
+                style={{
+                  opacity: currentStep >= 2 ? 1 : 0,
+                  filter: currentStep >= 2 ? 'blur(0px)' : 'blur(20px)',
+                  transform: currentStep >= 2 ? 'scale(1)' : 'scale(1.05)',
+                  transition: 'opacity 0.4s ease-out, filter 0.4s ease-out, transform 0.4s ease-out'
+                }}
+              >
+                <img
+                  src={images[2]}
+                  alt="Texto descritivo"
+                  className="w-full h-full object-contain"
+                />
+              </div>
 
-      // Terceira imagem (texto) - aparece após 2 segundos
-      timeline.to(`.frame-a-texto`, {
-        opacity: 1,
-        duration: 0.8,
-        ease: "power2.out"
-      }, "-=0.4");
+              {/* Indicadores de progresso */}
+              <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-3">
+                {images.map((_, index) => (
+                  <div
+                    key={index}
+                    className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                      index < currentStep ? 'bg-white' : 'bg-white/30'
+                    }`}
+                  />
+                ))}
+              </div>
 
-      // Atualizar step para indicadores
-      timeline.call(() => setCurrentStep(1), [], 1);
-      timeline.call(() => setCurrentStep(2), [], 2);
-      timeline.call(() => setCurrentStep(3), [], 3);
+              {/* Botão de fechar */}
+              <button
+                onClick={() => {
+                  setIsModalOpen(false);
+                  setSelectedBullet(null);
+                }}
+                className="absolute top-4 right-4 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full transition-all duration-200 z-10"
+              >
+                <X size={20} />
+              </button>
 
-    }, []);
+              {/* Botão de teste para debug */}
+              <button
+                onClick={() => {
+                  console.log('🧪 TESTE: Forçando re-render');
+                  setCurrentStep(0);
+                  setTimeout(() => setCurrentStep(1), 100);
+                  setTimeout(() => setCurrentStep(2), 200);
+                  setTimeout(() => setCurrentStep(3), 300);
+                }}
+                className="absolute top-4 left-4 bg-red-500 hover:bg-red-600 text-white p-2 rounded text-xs z-10"
+              >
+                TESTE
+              </button>
+            </div>
+          );
+        };
 
-    return (
-      <div ref={animationRef} className="relative w-full h-full flex items-center justify-center bg-black">
-        {/* Imagem de fundo */}
-        <img
-          src={images[0]}
-          alt="Background"
-          className="frame-a-bg absolute inset-0 w-full h-full object-contain opacity-0"
-        />
-        
-        {/* Imagem do ano */}
-        <img
-          src={images[1]}
-          alt="Ano 1990"
-          className="frame-a-ano absolute inset-0 w-full h-full object-contain opacity-0"
-        />
-        
-        {/* Imagem do texto */}
-        <img
-          src={images[2]}
-          alt="Texto descritivo"
-          className="frame-a-texto absolute inset-0 w-full h-full object-contain opacity-0"
-        />
+        // Componente de animação sequencial para Bullets
+        const BulletAnimation = ({ bullet }: { bullet: Bullet }) => {
+          const [currentStep, setCurrentStep] = useState(0);
+          const [imagesLoaded, setImagesLoaded] = useState(false);
+          const animationRef = useRef<HTMLDivElement>(null);
 
-        {/* Indicadores de progresso */}
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-3">
-          {images.map((_, index) => (
-            <div
-              key={index}
-              className={`w-3 h-3 rounded-full transition-all duration-500 ${
-                index < currentStep ? 'bg-white' : 'bg-white/30'
-              }`}
-            />
-          ))}
-        </div>
+          const images = loadImagesFromFolder(bullet.folder);
+          console.log('🎬 BulletAnimation: Carregando imagens para', bullet.folder, ':', images);
 
-        {/* Botão de fechar */}
-        <button
-          onClick={() => {
-            setIsModalOpen(false);
-            setSelectedBullet(null);
-          }}
-          className="absolute top-4 right-4 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full transition-all duration-200 z-10"
-        >
-          <X size={20} />
-        </button>
-      </div>
-    );
-  };
+          useEffect(() => {
+            if (!animationRef.current) return;
 
-  // Componente de animação sequencial para Bullets
-  const BulletAnimation = ({ bullet }: { bullet: Bullet }) => {
-    const [currentStep, setCurrentStep] = useState(0);
-    const animationRef = useRef<HTMLDivElement>(null);
+            console.log('🎬 BulletAnimation: Iniciando animação para', bullet.id);
 
-    const images = loadImagesFromFolder(bullet.folder);
+            // Animação de entrada do modal
+            gsap.fromTo(animationRef.current, 
+              { opacity: 0, scale: 0.8 },
+              { 
+                opacity: 1, 
+                scale: 1, 
+                duration: 0.3, 
+                ease: "power2.out" 
+              }
+            );
 
-    useEffect(() => {
-      if (!animationRef.current) return;
+            // Sequência de steps para indicadores
+            const stepTimeline = gsap.timeline({ delay: 0.3 });
+            stepTimeline.call(() => {
+              console.log('🎬 Step 1 ativado');
+              setCurrentStep(1);
+            }, [], 0.2);
+            stepTimeline.call(() => {
+              console.log('🎬 Step 2 ativado');
+              setCurrentStep(2);
+            }, [], 0.4);
+            stepTimeline.call(() => {
+              console.log('🎬 Step 3 ativado');
+              setCurrentStep(3);
+            }, [], 0.6);
+            
+            if (images[3]) {
+              stepTimeline.call(() => {
+                console.log('🎬 Step 4 ativado (imagem adicional)');
+                setCurrentStep(4);
+              }, [], 0.8);
+            }
 
-      // Animação de entrada do modal
-      gsap.fromTo(animationRef.current, 
-        { opacity: 0, scale: 0.8 },
-        { opacity: 1, scale: 1, duration: 0.5, ease: "power2.out" }
-      );
+          }, [bullet.id]);
 
-      // Sequência de animação das imagens
-      const timeline = gsap.timeline({ delay: 0.5 });
+          return (
+            <div ref={animationRef} className="relative w-full h-full flex items-center justify-center" style={{ backgroundColor: '#fff1ef' }}>
+              {/* Efeito de blur ao redor da imagem */}
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent blur-sm"></div>
+              </div>
+              
+              {/* Imagem de fundo - visível imediatamente */}
+              <img
+                src={images[0]}
+                alt="Background"
+                className="absolute inset-0 w-full h-full object-contain z-10"
+                onLoad={() => console.log('✅ Imagem de fundo carregada:', images[0])}
+                onError={(e) => {
+                  console.log('❌ Erro ao carregar imagem de fundo:', images[0]);
+                  e.currentTarget.style.display = 'none';
+                }}
+              />
+              
+              {/* Imagem do ano com animação CSS */}
+              <div 
+                className="absolute inset-0 w-full h-full z-20"
+                style={{
+                  opacity: currentStep >= 1 ? 1 : 0,
+                  filter: currentStep >= 1 ? 'blur(0px)' : 'blur(20px)',
+                  transform: currentStep >= 1 ? 'scale(1)' : 'scale(1.05)',
+                  transition: 'opacity 0.4s ease-out, filter 0.4s ease-out, transform 0.4s ease-out'
+                }}
+              >
+                <img
+                  src={images[1]}
+                  alt="Ano"
+                  className="w-full h-full object-contain"
+                  onLoad={() => console.log('✅ Imagem do ano carregada:', images[1])}
+                  onError={(e) => {
+                    console.log('❌ Erro ao carregar imagem do ano:', images[1]);
+                    e.currentTarget.style.display = 'none';
+                  }}
+                />
+              </div>
+              
+              {/* Imagem do texto com animação CSS */}
+              <div 
+                className="absolute inset-0 w-full h-full z-30"
+                style={{
+                  opacity: currentStep >= 2 ? 1 : 0,
+                  filter: currentStep >= 2 ? 'blur(0px)' : 'blur(20px)',
+                  transform: currentStep >= 2 ? 'scale(1)' : 'scale(1.05)',
+                  transition: 'opacity 0.4s ease-out, filter 0.4s ease-out, transform 0.4s ease-out'
+                }}
+              >
+                <img
+                  src={images[2]}
+                  alt="Texto descritivo"
+                  className="w-full h-full object-contain"
+                  onLoad={() => console.log('✅ Imagem do texto carregada:', images[2])}
+                  onError={(e) => {
+                    console.log('❌ Erro ao carregar imagem do texto:', images[2]);
+                    e.currentTarget.style.display = 'none';
+                  }}
+                />
+              </div>
 
-      // Primeira imagem (fundo) - aparece imediatamente
-      timeline.to(`.bullet-${bullet.id}-bg`, {
-        opacity: 1,
-        duration: 0.8,
-        ease: "power2.out"
-      });
+              {/* Imagem adicional (se existir) com animação CSS */}
+              {images[3] && (
+                <div 
+                  className="absolute inset-0 w-full h-full z-40"
+                  style={{
+                    opacity: currentStep >= 3 ? 1 : 0,
+                    filter: currentStep >= 3 ? 'blur(0px)' : 'blur(20px)',
+                    transform: currentStep >= 3 ? 'scale(1)' : 'scale(1.05)',
+                    transition: 'opacity 0.4s ease-out, filter 0.4s ease-out, transform 0.4s ease-out'
+                  }}
+                >
+                  <img
+                    src={images[3]}
+                    alt="Imagem adicional"
+                    className="w-full h-full object-contain"
+                    onLoad={() => console.log('✅ Imagem adicional carregada:', images[3])}
+                    onError={(e) => {
+                      console.log('❌ Erro ao carregar imagem opcional:', images[3]);
+                      e.currentTarget.style.display = 'none';
+                    }}
+                  />
+                </div>
+              )}
 
-      // Segunda imagem (ano) - aparece após 1.5s
-      timeline.to(`.bullet-${bullet.id}-ano`, {
-        opacity: 1,
-        duration: 0.8,
-        ease: "power2.out"
-      }, 1.5);
+              {/* Indicadores de progresso */}
+              <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-3">
+                {images.slice(0, 3).map((_, index) => (
+                  <div
+                    key={index}
+                    className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                      index < currentStep ? 'bg-white' : 'bg-white/30'
+                    }`}
+                  />
+                ))}
+                {images[3] && (
+                  <div
+                    className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                      currentStep >= 4 ? 'bg-white' : 'bg-white/30'
+                    }`}
+                  />
+                )}
+              </div>
 
-      // Terceira imagem (texto) - aparece após 3s
-      timeline.to(`.bullet-${bullet.id}-texto`, {
-        opacity: 1,
-        duration: 0.8,
-        ease: "power2.out"
-      }, 3);
-
-      // Quarta imagem (se existir) - aparece após 4.5s
-      if (images[3]) {
-        timeline.to(`.bullet-${bullet.id}-imagem`, {
-          opacity: 1,
-          duration: 0.8,
-          ease: "power2.out"
-        }, 4.5);
-      }
-
-      // Atualizar step para indicadores
-      timeline.call(() => setCurrentStep(1), [], 1);
-      timeline.call(() => setCurrentStep(2), [], 2);
-      timeline.call(() => setCurrentStep(3), [], 3);
-      if (images[3]) {
-        timeline.call(() => setCurrentStep(4), [], 4);
-      }
-
-    }, [bullet.id, images.length]);
-
-    return (
-      <div ref={animationRef} className="relative w-full h-full flex items-center justify-center bg-black">
-        {/* Imagem de fundo */}
-        <img
-          src={images[0]}
-          alt="Background"
-          className={`bullet-${bullet.id}-bg absolute inset-0 w-full h-full object-contain opacity-0`}
-        />
-        
-        {/* Imagem do ano */}
-        {images[1] && (
-          <img
-            src={images[1]}
-            alt="Ano"
-            className={`bullet-${bullet.id}-ano absolute inset-0 w-full h-full object-contain opacity-0`}
-          />
-        )}
-        
-        {/* Imagem do texto */}
-        {images[2] && (
-          <img
-            src={images[2]}
-            alt="Texto descritivo"
-            className={`bullet-${bullet.id}-texto absolute inset-0 w-full h-full object-contain opacity-0`}
-          />
-        )}
-
-        {/* Imagem adicional (se existir) */}
-        {images[3] && (
-          <img
-            src={images[3]}
-            alt="Imagem adicional"
-            className={`bullet-${bullet.id}-imagem absolute inset-0 w-full h-full object-contain opacity-0`}
-          />
-        )}
-
-        {/* Indicadores de progresso */}
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-3">
-          {images.map((_, index) => (
-            <div
-              key={index}
-              className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                index <= currentStep ? 'bg-white' : 'bg-white/30'
-              }`}
-            />
-          ))}
-        </div>
-
-        {/* Título do bullet */}
-        <div className="absolute top-8 left-1/2 -translate-x-1/2">
-          <h2 className="text-white text-2xl font-bold bg-black/50 px-4 py-2 rounded-lg">
-            {bullet.label}
-          </h2>
-        </div>
-      </div>
-    );
-  };
+              {/* Debug info */}
+              <div className="absolute top-4 left-4 bg-black/50 text-white p-2 rounded text-xs z-50">
+                <div>Step: {currentStep}</div>
+                <div>Images: {images.length}</div>
+                <div>Folder: {bullet.folder}</div>
+              </div>
+            </div>
+          );
+        };
 
   // Componente do carrossel modal
   const ImageCarousel = () => {
@@ -1064,7 +1153,8 @@ export function TVViewer() {
   }, [calibration.position, mode, getMaxPosition]);
 
   return (
-    <div className="relative w-full h-screen bg-black overflow-hidden">
+    <>
+      <div className="relative w-full h-screen bg-black overflow-hidden">
       {/* TV Container */}
       <div id="tv" className="relative w-full h-full border-4 border-gray-600 rounded-xl overflow-hidden bg-gray-900">
         
@@ -1290,6 +1380,93 @@ export function TVViewer() {
               />
               Mostrar Grid
             </label>
+          </div>
+
+          {/* Configurações de Animação */}
+          <div className="mb-4 p-3 bg-gray-800 rounded-lg">
+            <h4 className="text-sm font-semibold text-white mb-3">🎬 Configurações de Animação</h4>
+            
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs text-gray-300 mb-1">
+                  Velocidade do Fade: {animationConfig.imageFade.duration}s
+                </label>
+                <input
+                  type="range"
+                  min="0.1"
+                  max="2.0"
+                  step="0.1"
+                  value={animationConfig.imageFade.duration}
+                  onChange={(e) => {
+                    // Atualizar configuração de animação
+                    animationConfig.imageFade.duration = parseFloat(e.target.value);
+                    console.log('Velocidade do fade atualizada:', animationConfig.imageFade.duration);
+                  }}
+                  className="w-full"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs text-gray-300 mb-1">
+                  Delay entre Imagens: {animationConfig.imageDelay}s
+                </label>
+                <input
+                  type="range"
+                  min="0.1"
+                  max="1.0"
+                  step="0.1"
+                  value={animationConfig.imageDelay}
+                  onChange={(e) => {
+                    animationConfig.imageDelay = parseFloat(e.target.value);
+                    console.log('Delay entre imagens atualizado:', animationConfig.imageDelay);
+                  }}
+                  className="w-full"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs text-gray-300 mb-1">
+                  Velocidade de Entrada: {animationConfig.modalEntry.duration}s
+                </label>
+                <input
+                  type="range"
+                  min="0.1"
+                  max="1.0"
+                  step="0.1"
+                  value={animationConfig.modalEntry.duration}
+                  onChange={(e) => {
+                    animationConfig.modalEntry.duration = parseFloat(e.target.value);
+                    console.log('Velocidade de entrada atualizada:', animationConfig.modalEntry.duration);
+                  }}
+                  className="w-full"
+                />
+              </div>
+
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    animationConfig.imageFade.duration = 0.2;
+                    animationConfig.imageDelay = 0.1;
+                    animationConfig.modalEntry.duration = 0.2;
+                    console.log('Configurações de animação resetadas para velocidade máxima');
+                  }}
+                  className="px-2 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-xs"
+                >
+                  Velocidade Máxima
+                </button>
+                <button
+                  onClick={() => {
+                    animationConfig.imageFade.duration = 0.8;
+                    animationConfig.imageDelay = 0.5;
+                    animationConfig.modalEntry.duration = 0.5;
+                    console.log('Configurações de animação resetadas para velocidade normal');
+                  }}
+                  className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs"
+                >
+                  Velocidade Normal
+                </button>
+              </div>
+            </div>
           </div>
 
           {/* Controle UDP */}
@@ -1541,42 +1718,55 @@ export function TVViewer() {
         </div>
       )}
 
-      {/* Modal do Carrossel / Frame A Animation */}
-      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="w-[80vw] h-[80vh] max-w-none max-h-none p-0 bg-black/90 backdrop-blur-md border-0">
-          <DialogHeader className="absolute top-4 right-4 z-50">
-            <DialogTitle className="sr-only">
-              {selectedZone ? `Carrossel de Imagens - Target Zone ${selectedZone.id}` : 'Animação Frame A - FGTS 1990'}
-            </DialogTitle>
-            <button
+        {/* Modal do Carrossel / Frame A Animation */}
+        {isModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center">
+            {/* Overlay com blur */}
+            <div 
+              className="absolute inset-0 bg-black/30 backdrop-blur-lg"
               onClick={() => {
-            setIsModalOpen(false);
-            setSelectedBullet(null);
-          }}
-              className="bg-black/50 hover:bg-black/70 text-white p-2 rounded-full transition-all duration-200"
-              aria-label="Fechar modal"
-            >
-              <X size={20} />
-            </button>
-          </DialogHeader>
-          {selectedBullet ? (
-            <>
-              {console.log('Renderizando BulletAnimation para bullet:', selectedBullet.id)}
-              <BulletAnimation bullet={selectedBullet} />
-            </>
-          ) : selectedZone ? (
-            <>
-              {console.log('Renderizando ImageCarousel para zone:', selectedZone.id)}
-              <ImageCarousel />
-            </>
-          ) : (
-            <>
-              {console.log('Renderizando FrameAAnimation')}
-              <FrameAAnimation />
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
-    </div>
+                setIsModalOpen(false);
+                setSelectedBullet(null);
+              }}
+            ></div>
+            
+            {/* Conteúdo do modal */}
+            <div className="relative w-[80vw] h-[80vh] bg-transparent rounded-lg overflow-hidden z-10">
+              {/* Botão de fechar */}
+              <button
+                onClick={() => {
+                  setIsModalOpen(false);
+                  setSelectedBullet(null);
+                }}
+                className="absolute top-4 right-4 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full transition-all duration-200 z-50"
+                aria-label="Fechar modal"
+              >
+                <X size={20} />
+              </button>
+              
+              {/* Conteúdo */}
+              <div className="w-full h-full">
+                {selectedBullet ? (
+                  <>
+                    {console.log('Renderizando BulletAnimation para bullet:', selectedBullet.id)}
+                    <BulletAnimation bullet={selectedBullet} />
+                  </>
+                ) : selectedZone ? (
+                  <>
+                    {console.log('Renderizando ImageCarousel para zone:', selectedZone.id)}
+                    <ImageCarousel />
+                  </>
+                ) : (
+                  <>
+                    {console.log('Renderizando FrameAAnimation')}
+                    <FrameAAnimation />
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </>
   );
 }
