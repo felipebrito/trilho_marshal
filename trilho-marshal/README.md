@@ -1,6 +1,15 @@
 # Trilho Marshal - Instalação Interativa
 
-Uma aplicação interativa que simula um trilho com uma TV sobre uma parede, permitindo navegação horizontal em uma imagem de fundo com bullets pulsantes clicáveis.
+Uma aplicação interativa que simula um trilho com uma TV sobre uma parede, permitindo navegação horizontal em uma imagem de fundo com bullets pulsantes clicáveis. Inclui sistema de calibração avançado, animações sequenciais e controle via UDP.
+
+## ✨ Novidades da Versão Atual
+
+- **Modal customizado** com blur funcional ao redor
+- **Animações sequenciais** melhoradas com transições suaves
+- **Sistema de debug** visual para desenvolvimento
+- **Tratamento de erros** robusto para carregamento de imagens
+- **Fundo personalizado** (#fff1ef) para melhor contraste
+- **Performance otimizada** com CSS transitions
 
 ## 🚀 Instalação e Execução
 
@@ -82,6 +91,9 @@ O servidor UDP estará disponível na porta 8888.
 - Cores e tamanhos personalizáveis
 - Animações sequenciais ao clicar
 - Carregamento de imagens de pastas específicas
+- **Debug visual** com informações em tempo real
+- **Tratamento de erros** para imagens não encontradas
+- **Transições suaves** com fade e blur
 
 ## 📁 Estrutura de Arquivos
 
@@ -91,7 +103,8 @@ trilho-marshal/
 │   ├── page.tsx              # Página principal
 │   └── globals.css           # Estilos globais
 ├── components/
-│   └── TVViewer.tsx          # Componente principal
+│   ├── TVViewer.tsx          # Componente principal
+│   └── FadeContent.tsx       # Componente de animações
 ├── hooks/
 │   └── useUDPControl.ts      # Hook para controle UDP
 ├── lib/
@@ -157,6 +170,16 @@ npm install
 - Confirme que está em modo operação (tecla C)
 - Teste com `npm run test-udp`
 
+### Modal sem blur
+- Verifique se o navegador suporta `backdrop-filter`
+- Teste em Chrome/Safari (melhor suporte)
+- Verifique se não há conflitos de CSS
+
+### Animações não funcionam
+- Verifique o console para logs de debug
+- Confirme se as imagens estão carregando
+- Use a caixa de debug no modal para verificar o progresso
+
 ## 📝 Scripts Disponíveis
 
 ```bash
@@ -181,6 +204,28 @@ npm run test-udp     # Testar controle UDP
 ### Alterar Sensibilidade
 1. Modifique `sensitivity` em `handleGlobalWheel`
 2. Ajuste `step` em `handleKeyDown` para teclas O/P
+
+### Configurar Animações
+1. Edite `animationConfig` em `TVViewer.tsx`
+2. Ajuste durações, delays e easing
+3. Use os sliders na calibração para teste em tempo real
+
+## 🔧 Melhorias Técnicas
+
+### Modal Customizado
+- **Substituição do shadcn Dialog** por modal HTML/CSS puro
+- **Blur funcional** com `backdrop-filter` e `-webkit-backdrop-filter`
+- **Performance otimizada** sem dependências externas desnecessárias
+
+### Sistema de Debug
+- **Logs detalhados** no console para desenvolvimento
+- **Debug visual** com informações em tempo real no modal
+- **Tratamento de erros** robusto para carregamento de imagens
+
+### Animações Melhoradas
+- **CSS transitions** em vez de GSAP para melhor performance
+- **Fade e blur** suaves com transições configuráveis
+- **Estados visuais** claros para cada etapa da animação
 
 ## 📄 Licença
 
