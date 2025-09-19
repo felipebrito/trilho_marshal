@@ -1,0 +1,234 @@
+{
+  "version": "1.0.0",
+  "projectName": "Trilho Marshal",
+  "description": "Aplicação interativa para calibração digital-física com navegação horizontal e frames clicáveis",
+  "tags": {
+    "master": {
+      "name": "master",
+      "description": "Tarefas principais do projeto",
+      "createdAt": "2025-01-18T21:00:00.000Z",
+      "tasks": [
+        {
+          "id": "1",
+          "title": "Setup do projeto Next.js com TypeScript e Tailwind CSS",
+          "description": "Configurar a base técnica do projeto com Next.js 15, TypeScript e Tailwind CSS v4",
+          "status": "done",
+          "priority": "high",
+          "dependencies": [],
+          "details": "Configurar Next.js 15 com TypeScript, Tailwind CSS v4, e estrutura de pastas adequada para a aplicação interativa",
+          "testStrategy": "Verificar se o servidor de desenvolvimento inicia corretamente e as páginas carregam sem erros",
+          "subtasks": []
+        },
+        {
+          "id": "2",
+          "title": "Instalar dependências: shadcn/ui, GSAP, e outras bibliotecas necessárias",
+          "description": "Instalar e configurar todas as dependências necessárias para o projeto",
+          "status": "done",
+          "priority": "high",
+          "dependencies": ["1"],
+          "details": "Instalar shadcn/ui, GSAP, Radix UI, Lucide React, e outras bibliotecas necessárias para componentes e animações",
+          "testStrategy": "Verificar se todas as dependências foram instaladas corretamente e não há conflitos",
+          "subtasks": []
+        },
+        {
+          "id": "3",
+          "title": "Criar estrutura de pastas e componentes base do projeto",
+          "description": "Definir a arquitetura de componentes e criar a estrutura base",
+          "status": "done",
+          "priority": "high",
+          "dependencies": ["2"],
+          "details": "Criar estrutura de pastas, tipos TypeScript, utilitários, e componentes base (TVViewer, FrameManager, etc.)",
+          "testStrategy": "Verificar se todos os componentes podem ser importados e renderizados sem erros",
+          "subtasks": []
+        },
+        {
+          "id": "4",
+          "title": "Implementar sistema de câmera virtual para navegação horizontal",
+          "description": "Criar o sistema de câmera virtual que permite navegação horizontal suave",
+          "status": "done",
+          "priority": "high",
+          "dependencies": ["3"],
+          "details": "Implementar sistema de transformações CSS para simular movimento de câmera, com controle de posição, escala e offset",
+          "testStrategy": "Testar navegação horizontal suave e verificar se as transformações são aplicadas corretamente",
+          "subtasks": []
+        },
+        {
+          "id": "5",
+          "title": "Criar sistema de carregamento e exibição da imagem de fundo",
+          "description": "Implementar carregamento e exibição da imagem de fundo com redimensionamento adequado",
+          "status": "done",
+          "priority": "high",
+          "dependencies": ["4"],
+          "details": "Carregar imagem bg300x200-comtv.jpg, detectar dimensões, e configurar exibição adequada para calibração",
+          "testStrategy": "Verificar se a imagem carrega corretamente e as dimensões são detectadas",
+          "subtasks": []
+        },
+        {
+          "id": "6",
+          "title": "Implementar sistema básico de frames com posicionamento e visibilidade",
+          "description": "Criar sistema de frames posicionados sobre a imagem com detecção de visibilidade",
+          "status": "done",
+          "priority": "high",
+          "dependencies": ["5"],
+          "details": "Implementar FrameManager com posicionamento dinâmico e detecção de visibilidade baseada na câmera",
+          "testStrategy": "Verificar se os frames aparecem/desaparecem corretamente conforme a navegação",
+          "subtasks": []
+        },
+        {
+          "id": "7",
+          "title": "Criar controles de calibração (escala, offset, posição)",
+          "description": "Implementar painel de controles para calibração digital-física",
+          "status": "done",
+          "priority": "high",
+          "dependencies": ["6"],
+          "details": "Criar CalibrationPanel com sliders para escala, posição, offset X/Y, e controles de grid",
+          "testStrategy": "Testar todos os controles e verificar se as mudanças são aplicadas em tempo real",
+          "subtasks": []
+        },
+        {
+          "id": "8",
+          "title": "Implementar persistência de configurações no localStorage",
+          "description": "Salvar e carregar configurações de calibração automaticamente",
+          "status": "done",
+          "priority": "medium",
+          "dependencies": ["7"],
+          "details": "Implementar sistema de persistência que salva configurações automaticamente e as carrega na inicialização",
+          "testStrategy": "Verificar se as configurações são salvas e carregadas corretamente entre sessões",
+          "subtasks": []
+        },
+        {
+          "id": "9",
+          "title": "Adicionar suporte a gestos touch (pan, pinch, swipe)",
+          "description": "Implementar gestos touch completos para interação móvel",
+          "status": "done",
+          "priority": "high",
+          "dependencies": ["8"],
+          "details": "Criar GestureManager com suporte a pan, pinch-to-zoom, swipe, e gestos de navegação",
+          "testStrategy": "Testar todos os gestos em dispositivos móveis e verificar responsividade",
+          "subtasks": []
+        },
+        {
+          "id": "10",
+          "title": "Implementar navegação por scroll horizontal",
+          "description": "Adicionar navegação por scroll do mouse/touchpad",
+          "status": "done",
+          "priority": "high",
+          "dependencies": ["9"],
+          "details": "Implementar navegação por scroll horizontal com detecção inteligente e suporte a Shift+scroll",
+          "testStrategy": "Testar scroll horizontal e vertical, verificar se apenas horizontal funciona",
+          "subtasks": []
+        },
+        {
+          "id": "11",
+          "title": "Criar modo operação com interface simplificada",
+          "description": "Implementar modo operação para uso final da instalação",
+          "status": "done",
+          "priority": "medium",
+          "dependencies": ["10"],
+          "details": "Criar modo operação que oculta controles de calibração e mostra apenas HUD essencial",
+          "testStrategy": "Testar alternância entre modos e verificar interface simplificada",
+          "subtasks": []
+        },
+        {
+          "id": "12",
+          "title": "Implementar sistema de grid para referência de alinhamento",
+          "description": "Adicionar sistema de grid visual para facilitar calibração",
+          "status": "done",
+          "priority": "medium",
+          "dependencies": ["11"],
+          "details": "Implementar grid visual com tamanho configurável para referência de alinhamento",
+          "testStrategy": "Verificar se o grid aparece/desaparece e se o tamanho é ajustável",
+          "subtasks": []
+        },
+        {
+          "id": "13",
+          "title": "Tornar frames clicáveis com estados visuais",
+          "description": "Implementar interatividade nos frames com feedback visual",
+          "status": "done",
+          "priority": "high",
+          "dependencies": ["12"],
+          "details": "Adicionar estados visuais aos frames e implementar sistema de clique",
+          "testStrategy": "Testar cliques nos frames e verificar feedback visual",
+          "subtasks": []
+        },
+        {
+          "id": "14",
+          "title": "Implementar modal com blur background usando shadcn/ui",
+          "description": "Criar sistema de modal com efeito de blur no fundo",
+          "status": "done",
+          "priority": "high",
+          "dependencies": ["13"],
+          "details": "Implementar ModalSystem usando shadcn/ui com blur background e controles de navegação",
+          "testStrategy": "Testar abertura/fechamento do modal e verificar efeito de blur",
+          "subtasks": []
+        },
+        {
+          "id": "15",
+          "title": "Criar carrossel de imagens com navegação por arrastar",
+          "description": "Implementar carrossel de imagens dentro do modal",
+          "status": "pending",
+          "priority": "high",
+          "dependencies": ["14"],
+          "details": "Criar carrossel com navegação por arrastar, setas, e indicadores de posição",
+          "testStrategy": "Testar navegação por arrastar e controles do carrossel",
+          "subtasks": []
+        },
+        {
+          "id": "16",
+          "title": "Adicionar transições fade usando GSAP",
+          "description": "Implementar animações suaves com GSAP",
+          "status": "pending",
+          "priority": "medium",
+          "dependencies": ["15"],
+          "details": "Adicionar transições fade in/out entre imagens do carrossel usando GSAP",
+          "testStrategy": "Verificar se as transições são suaves e performáticas",
+          "subtasks": []
+        },
+        {
+          "id": "17",
+          "title": "Otimizar performance para gestos suaves e carregamento",
+          "description": "Melhorar performance geral da aplicação",
+          "status": "done",
+          "priority": "medium",
+          "dependencies": ["16"],
+          "details": "Otimizar gestos touch, scroll, e carregamento de imagens para melhor performance",
+          "testStrategy": "Testar performance em diferentes dispositivos e conexões",
+          "subtasks": []
+        },
+        {
+          "id": "18",
+          "title": "Criar sistema de configuração de frames (posicionamento, conteúdo)",
+          "description": "Implementar editor para configurar frames e seu conteúdo",
+          "status": "pending",
+          "priority": "low",
+          "dependencies": ["17"],
+          "details": "Criar interface para configurar posição, tamanho e conteúdo dos frames",
+          "testStrategy": "Testar criação e edição de frames",
+          "subtasks": []
+        },
+        {
+          "id": "19",
+          "title": "Implementar sistema de presets para diferentes configurações",
+          "description": "Criar sistema de presets para salvar/carregar configurações",
+          "status": "pending",
+          "priority": "low",
+          "dependencies": ["18"],
+          "details": "Implementar sistema de presets para diferentes instalações ou configurações",
+          "testStrategy": "Testar criação, salvamento e carregamento de presets",
+          "subtasks": []
+        },
+        {
+          "id": "20",
+          "title": "Configurar build de produção e deploy",
+          "description": "Preparar aplicação para produção e deploy",
+          "status": "pending",
+          "priority": "medium",
+          "dependencies": ["19"],
+          "details": "Configurar build otimizado, deploy e testes em dispositivos reais",
+          "testStrategy": "Testar build de produção e deploy em ambiente real",
+          "subtasks": []
+        }
+      ]
+    }
+  }
+}

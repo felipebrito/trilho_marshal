@@ -1,0 +1,149 @@
+{
+  "version": "1.0.0",
+  "projectName": "Trilho Marshal",
+  "analysisDate": "2025-01-18T21:30:00.000Z",
+  "totalTasks": 20,
+  "completedTasks": 14,
+  "pendingTasks": 6,
+  "complexityAnalysis": {
+    "highComplexity": [
+      {
+        "id": "4",
+        "title": "Implementar sistema de câmera virtual para navegação horizontal",
+        "complexityScore": 9,
+        "reasoning": "Sistema complexo de transformações CSS, cálculos matemáticos para posicionamento, e integração com gestos touch. Requer conhecimento avançado de geometria e performance.",
+        "recommendations": [
+          "Quebrar em subtarefas: cálculos de transformação, otimização de performance, integração com gestos",
+          "Implementar testes unitários para cálculos matemáticos",
+          "Considerar usar bibliotecas como Framer Motion para animações complexas"
+        ]
+      },
+      {
+        "id": "9",
+        "title": "Adicionar suporte a gestos touch (pan, pinch, swipe)",
+        "complexityScore": 8,
+        "reasoning": "Implementação de gestos multi-touch complexos, detecção de direção, e integração com diferentes dispositivos. Requer tratamento de edge cases e compatibilidade cross-browser.",
+        "recommendations": [
+          "Usar bibliotecas como Hammer.js ou implementar detecção manual robusta",
+          "Testar extensivamente em diferentes dispositivos e browsers",
+          "Implementar fallbacks para dispositivos sem suporte a touch"
+        ]
+      },
+      {
+        "id": "15",
+        "title": "Criar carrossel de imagens com navegação por arrastar",
+        "complexityScore": 7,
+        "reasoning": "Implementação de carrossel com gestos de arrastar, cálculos de posição, e transições suaves. Requer integração com GSAP e tratamento de diferentes tamanhos de imagem.",
+        "recommendations": [
+          "Implementar carrossel responsivo com lazy loading",
+          "Usar GSAP para animações suaves",
+          "Considerar bibliotecas como Swiper.js como base"
+        ]
+      }
+    ],
+    "mediumComplexity": [
+      {
+        "id": "5",
+        "title": "Criar sistema de carregamento e exibição da imagem de fundo",
+        "complexityScore": 6,
+        "reasoning": "Carregamento assíncrono de imagens, detecção de dimensões, e redimensionamento responsivo. Requer tratamento de erros e otimização de performance.",
+        "recommendations": [
+          "Implementar lazy loading e compressão de imagens",
+          "Adicionar indicadores de carregamento",
+          "Considerar formatos de imagem otimizados (WebP, AVIF)"
+        ]
+      },
+      {
+        "id": "6",
+        "title": "Implementar sistema básico de frames com posicionamento e visibilidade",
+        "complexityScore": 6,
+        "reasoning": "Sistema de posicionamento dinâmico e detecção de visibilidade baseada na câmera. Requer cálculos de interseção e otimização de performance.",
+        "recommendations": [
+          "Usar Intersection Observer API para detecção de visibilidade",
+          "Implementar virtualização para muitos frames",
+          "Otimizar cálculos de posicionamento"
+        ]
+      },
+      {
+        "id": "14",
+        "title": "Implementar modal com blur background usando shadcn/ui",
+        "complexityScore": 5,
+        "reasoning": "Integração com shadcn/ui, implementação de blur background, e gerenciamento de estado do modal. Requer conhecimento de CSS e animações.",
+        "recommendations": [
+          "Usar backdrop-filter para blur nativo",
+          "Implementar animações de entrada/saída",
+          "Considerar acessibilidade (focus trap, escape key)"
+        ]
+      },
+      {
+        "id": "20",
+        "title": "Configurar build de produção e deploy",
+        "complexityScore": 5,
+        "reasoning": "Configuração de build otimizado, deploy, e testes em dispositivos reais. Requer conhecimento de DevOps e otimização de performance.",
+        "recommendations": [
+          "Configurar bundle analyzer para otimização",
+          "Implementar CI/CD pipeline",
+          "Testar em dispositivos reais da instalação"
+        ]
+      }
+    ],
+    "lowComplexity": [
+      {
+        "id": "1",
+        "title": "Setup do projeto Next.js com TypeScript e Tailwind CSS",
+        "complexityScore": 3,
+        "reasoning": "Configuração inicial padrão do Next.js. Tarefa bem documentada e com templates disponíveis.",
+        "recommendations": [
+          "Seguir documentação oficial do Next.js",
+          "Configurar ESLint e Prettier",
+          "Usar templates oficiais como base"
+        ]
+      },
+      {
+        "id": "2",
+        "title": "Instalar dependências: shadcn/ui, GSAP, e outras bibliotecas necessárias",
+        "complexityScore": 2,
+        "reasoning": "Instalação de pacotes npm. Tarefa simples mas requer verificação de compatibilidade.",
+        "recommendations": [
+          "Verificar compatibilidade entre versões",
+          "Usar package-lock.json para versões fixas",
+          "Testar instalação em ambiente limpo"
+        ]
+      },
+      {
+        "id": "7",
+        "title": "Criar controles de calibração (escala, offset, posição)",
+        "complexityScore": 4,
+        "reasoning": "Implementação de controles UI com sliders. Requer integração com estado da aplicação.",
+        "recommendations": [
+          "Usar componentes do shadcn/ui",
+          "Implementar validação de valores",
+          "Adicionar feedback visual para mudanças"
+        ]
+      },
+      {
+        "id": "8",
+        "title": "Implementar persistência de configurações no localStorage",
+        "complexityScore": 3,
+        "reasoning": "Implementação simples de localStorage. Requer tratamento de erros e serialização.",
+        "recommendations": [
+          "Implementar fallback para localStorage indisponível",
+          "Adicionar validação de dados salvos",
+          "Considerar compressão para dados grandes"
+        ]
+      }
+    ]
+  },
+  "summary": {
+    "averageComplexity": 5.2,
+    "complexityDistribution": {
+      "low": 4,
+      "medium": 4,
+      "high": 3
+    },
+    "riskAssessment": "Médio - Projeto tem algumas tarefas complexas mas bem definidas. Principais riscos são performance e compatibilidade cross-device.",
+    "recommendedApproach": "Desenvolvimento iterativo com foco em MVP primeiro, depois otimizações e features avançadas.",
+    "estimatedEffort": "4-6 semanas para desenvolvimento completo, 2-3 semanas para MVP",
+    "criticalPath": ["1", "2", "3", "4", "5", "6", "7", "9", "15", "16", "20"]
+  }
+}

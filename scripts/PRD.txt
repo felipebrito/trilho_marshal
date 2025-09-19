@@ -1,0 +1,237 @@
+<context>
+# Overview  
+Trilho Marshal é uma aplicação web interativa que simula um trilho digital sobre uma parede física, permitindo que usuários naveguem horizontalmente através de uma imagem de fundo e interajam com elementos clicáveis (bullets/frames). A aplicação faz parte de uma instalação interativa onde uma TV é posicionada sobre uma parede impressa, criando uma experiência híbrida entre o digital e o físico. O sistema permite calibração precisa para alinhar o conteúdo digital com a arte física impressa, oferecendo interatividade através de gestos touch, pinch-to-zoom e navegação por scroll.
+
+# Core Features  
+## Sistema de Calibração Digital-Física
+- **Ajuste de posicionamento**: Permite ajustar offset X/Y para alinhar perfeitamente o conteúdo digital com a arte física impressa
+- **Controle de escala**: Zoom in/out com pinch gestures para ajustar o tamanho do conteúdo à parede física
+- **Sistema de grid**: Grade de referência para facilitar o alinhamento preciso
+- **Persistência de configurações**: Salva automaticamente os ajustes de calibração no localStorage
+
+## Navegação Horizontal no Trilho
+- **Scroll horizontal**: Navegação suave através da imagem de fundo usando scroll do mouse ou touch
+- **Posicionamento percentual**: Sistema de posição 0-100% para controle preciso da câmera
+- **Transição suave**: Animações fluidas durante a navegação
+- **Modo operação**: Interface simplificada para uso final da instalação
+
+## Sistema de Bullets/Frames Interativos
+- **Elementos clicáveis**: Divs posicionados sobre a imagem que respondem a cliques
+- **Estados visuais**: Feedback visual quando os frames estão ativos/visíveis
+- **Posicionamento dinâmico**: Frames são posicionados automaticamente baseados no tamanho da imagem
+- **Detecção de visibilidade**: Sistema que mostra/oculta frames baseado na posição da câmera
+
+## Sistema de Modal e Carrossel
+- **Modal com blur**: Overlay com efeito de desfoque no fundo
+- **Carrossel de imagens**: Galeria de imagens dentro do modal
+- **Navegação por arrastar**: Swipe/arrastar para trocar imagens
+- **Transições fade**: Fade in/out entre imagens usando GSAP
+- **Controles de navegação**: Botões e indicadores para navegação
+
+## Interface Responsiva e Touch
+- **Gestos touch**: Suporte completo a pinch, pan e swipe
+- **Interface adaptativa**: Controles que se adaptam a diferentes tamanhos de tela
+- **Modo mobile**: Interface otimizada para dispositivos móveis
+- **Feedback tátil**: Resposta visual e tátil aos gestos do usuário
+
+# User Experience  
+## Personas
+- **Instalador/Técnico**: Responsável por calibrar o sistema e alinhar o digital com o físico
+- **Visitante/Usuário Final**: Interage com a instalação através de gestos e cliques
+- **Curador/Artista**: Configura o conteúdo e posiciona os elementos interativos
+
+## Key User Flows
+### Fluxo de Calibração (Instalador)
+1. Carrega a imagem de fundo (bg300x200-comtv.jpg)
+2. Ajusta escala e posicionamento usando controles
+3. Usa gestos touch para fine-tuning
+4. Ativa grid para alinhamento preciso
+5. Salva configuração para uso posterior
+
+### Fluxo de Interação (Visitante)
+1. Aproxima-se da instalação
+2. Usa scroll ou gestos para navegar horizontalmente
+3. Observa frames que aparecem conforme navega
+4. Clica em um frame de interesse
+5. Modal abre com carrossel de imagens
+6. Navega pelas imagens arrastando ou usando controles
+7. Fecha modal e continua explorando
+
+### Fluxo de Configuração de Conteúdo (Curador)
+1. Acessa modo de calibração
+2. Posiciona frames nos pontos desejados da imagem
+3. Configura conteúdo de cada frame (imagens do carrossel)
+4. Testa interações e ajusta posicionamento
+5. Salva configuração final
+
+## UI/UX Considerations
+- **Interface minimalista**: Controles discretos que não interferem na experiência
+- **Feedback visual claro**: Estados visuais óbvios para interações
+- **Performance otimizada**: Animações suaves mesmo com imagens grandes
+- **Acessibilidade**: Suporte a diferentes tipos de interação (mouse, touch, teclado)
+- **Calibração intuitiva**: Ferramentas que facilitam o alinhamento preciso
+</context>
+<PRD>
+# Technical Architecture  
+## System Components
+### Frontend (Next.js + React)
+- **Componente principal**: TVViewer com sistema de câmera virtual
+- **Sistema de frames**: FrameManager para gerenciar elementos clicáveis
+- **Modal system**: ModalManager com carrossel integrado
+- **Calibração**: CalibrationPanel para ajustes de posicionamento
+- **Touch handlers**: GestureManager para gestos touch/pinch
+
+### Libraries and Dependencies
+- **shadcn/ui**: Componentes de interface (Modal, Button, Slider, etc.)
+- **GSAP**: Animações do carrossel e transições
+- **Next.js**: Framework React com SSR/SSG
+- **TypeScript**: Tipagem estática para melhor manutenibilidade
+- **Tailwind CSS**: Estilização utilitária
+
+### Data Models
+```typescript
+interface CalibrationData {
+  scale: number;
+  offsetX: number;
+  offsetY: number;
+  position: number;
+  gridSize: number;
+  showGrid: boolean;
+}
+
+interface Frame {
+  id: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  content: FrameContent;
+}
+
+interface FrameContent {
+  title: string;
+  images: string[];
+  description?: string;
+}
+
+interface AppState {
+  mode: 'calibration' | 'operation';
+  calibration: CalibrationData;
+  frames: Frame[];
+  currentFrame?: string;
+  isModalOpen: boolean;
+}
+```
+
+### APIs and Integrations
+- **File System API**: Para carregamento de imagens locais
+- **localStorage**: Persistência de configurações de calibração
+- **Image API**: Processamento e redimensionamento de imagens
+- **Touch Events API**: Gestos e interações touch
+
+### Infrastructure Requirements
+- **Servidor web**: Next.js com suporte a SSR
+- **CDN**: Para otimização de imagens (opcional)
+- **HTTPS**: Necessário para APIs de arquivo em produção
+- **Responsive design**: Suporte a diferentes resoluções de tela
+
+# Development Roadmap  
+## Phase 1: Foundation and Core Navigation (MVP)
+- **Setup do projeto Next.js** com TypeScript e Tailwind
+- **Implementação do sistema de câmera virtual** para navegação horizontal
+- **Sistema básico de frames** com posicionamento e visibilidade
+- **Carregamento e exibição da imagem de fundo** (bg300x200-comtv.jpg)
+- **Controles básicos de calibração** (escala, offset, posição)
+- **Persistência de configurações** no localStorage
+- **Interface de calibração** com sliders e controles
+
+## Phase 2: Touch and Gesture System
+- **Implementação de gestos touch** (pan, pinch, swipe)
+- **Sistema de pinch-to-zoom** para ajuste de escala
+- **Navegação por scroll** horizontal
+- **Modo operação** com interface simplificada
+- **Sistema de grid** para referência de alinhamento
+- **Otimização de performance** para gestos suaves
+
+## Phase 3: Interactive Frames and Modal System
+- **Sistema de frames clicáveis** com estados visuais
+- **Modal com blur background** usando shadcn/ui
+- **Carrossel de imagens** com navegação por arrastar
+- **Transições fade** usando GSAP
+- **Sistema de conteúdo** para frames (imagens, títulos, descrições)
+- **Controles de navegação** do carrossel
+
+## Phase 4: Advanced Features and Polish
+- **Sistema de configuração de frames** (posicionamento, conteúdo)
+- **Múltiplas imagens de fundo** (se necessário)
+- **Sistema de presets** para diferentes configurações
+- **Otimizações de performance** e carregamento
+- **Testes e refinamentos** de UX
+- **Documentação** e guias de uso
+
+## Phase 5: Production and Deployment
+- **Build de produção** otimizado
+- **Configuração de deploy** (Vercel/Netlify)
+- **Testes em dispositivos reais** da instalação
+- **Calibração final** com a arte física
+- **Treinamento** para usuários finais
+
+# Logical Dependency Chain
+## Foundation First (Phase 1)
+1. **Setup do projeto** - Base técnica necessária para tudo
+2. **Sistema de câmera virtual** - Core da funcionalidade de navegação
+3. **Carregamento de imagem** - Necessário para testar navegação
+4. **Sistema básico de frames** - Estrutura para elementos interativos
+5. **Controles de calibração** - Essencial para alinhamento
+
+## Interaction Layer (Phase 2)
+6. **Gestos touch** - Depende do sistema de câmera funcionando
+7. **Navegação por scroll** - Depende dos gestos básicos
+8. **Sistema de grid** - Depende da calibração funcionando
+9. **Modo operação** - Depende da navegação estar funcional
+
+## Content and Interaction (Phase 3)
+10. **Frames clicáveis** - Depende do sistema de frames básico
+11. **Modal system** - Depende dos frames estarem funcionando
+12. **Carrossel** - Depende do modal estar implementado
+13. **Transições GSAP** - Depende do carrossel estar funcionando
+
+## Polish and Production (Phase 4-5)
+14. **Configuração avançada** - Depende de tudo estar funcionando
+15. **Otimizações** - Depende da funcionalidade completa
+16. **Deploy e testes** - Depende de tudo estar polido
+
+# Risks and Mitigations  
+## Technical Challenges
+- **Performance com imagens grandes**: Mitigação através de lazy loading e otimização de imagens
+- **Precisão de calibração**: Implementar sistema de grid e controles granulares
+- **Compatibilidade touch**: Testes extensivos em diferentes dispositivos
+- **Sincronização digital-físico**: Sistema de calibração robusto com persistência
+
+## MVP Definition
+- **Funcionalidade mínima**: Navegação horizontal + frames básicos + calibração
+- **Interface simples**: Controles essenciais para calibração e operação
+- **Performance básica**: Funcionamento suave em dispositivos padrão
+- **Persistência mínima**: Salvar configurações de calibração
+
+## Resource Constraints
+- **Desenvolvimento iterativo**: Focar em funcionalidades core primeiro
+- **Testes contínuos**: Validação em cada fase de desenvolvimento
+- **Documentação clara**: Para facilitar manutenção e evolução
+- **Código modular**: Para facilitar ajustes e melhorias
+
+# Appendix  
+## Research Findings
+- **shadcn/ui**: Biblioteca de componentes bem documentada e customizável
+- **GSAP**: Performance superior para animações complexas
+- **Next.js**: Framework robusto com otimizações automáticas
+- **Touch events**: API nativa do browser com boa compatibilidade
+
+## Technical Specifications
+- **Resolução alvo**: 1080x1920 (formato vertical para TV)
+- **Imagem de fundo**: bg300x200-comtv.jpg (300x200px, otimizada para web)
+- **Sistema de coordenadas**: Baseado em pixels da imagem original
+- **Persistência**: localStorage para configurações de calibração
+- **Compatibilidade**: Chrome, Safari, Firefox (versões recentes)
+- **Touch support**: iOS Safari, Chrome Mobile, Samsung Internet
+</PRD>
