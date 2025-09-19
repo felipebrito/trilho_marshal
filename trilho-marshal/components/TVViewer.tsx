@@ -336,7 +336,11 @@ export function TVViewer() {
 
   const handleFrameClick = (frameId: string) => {
     console.log('Frame clicked:', frameId);
-    // TODO: Implementar modal
+    if (frameId === 'A') {
+      setSelectedZone(null);
+      setCurrentImageIndex(0);
+      setIsModalOpen(true);
+    }
   };
 
   const handleTargetZoneClick = (zone: TargetZone) => {
@@ -405,6 +409,103 @@ export function TVViewer() {
             />
           ))}
         </div>
+      </div>
+    );
+  };
+
+  // Componente especial para Frame A - Animação sequencial
+  const FrameAAnimation = () => {
+    const [currentStep, setCurrentStep] = useState(0);
+    const animationRef = useRef<HTMLDivElement>(null);
+
+    const images = [
+      'https://picsum.photos/800/600?random=100',  // Fundo
+      'https://picsum.photos/800/600?random=101', // Ano (1990)
+      'https://picsum.photos/800/600?random=102'  // Texto
+    ];
+
+    useEffect(() => {
+      if (!animationRef.current) return;
+
+      // Animação de entrada do modal
+      gsap.fromTo(animationRef.current, 
+        { opacity: 0, scale: 0.8 },
+        { opacity: 1, scale: 1, duration: 0.5, ease: "power2.out" }
+      );
+
+      // Sequência de animação das imagens
+      const timeline = gsap.timeline({ delay: 0.5 });
+
+      // Primeira imagem (fundo) - aparece imediatamente
+      timeline.to(`.frame-a-bg`, {
+        opacity: 1,
+        duration: 0.8,
+        ease: "power2.out"
+      });
+
+      // Segunda imagem (ano) - aparece após 1 segundo
+      timeline.to(`.frame-a-ano`, {
+        opacity: 1,
+        duration: 0.8,
+        ease: "power2.out"
+      }, "-=0.4");
+
+      // Terceira imagem (texto) - aparece após 2 segundos
+      timeline.to(`.frame-a-texto`, {
+        opacity: 1,
+        duration: 0.8,
+        ease: "power2.out"
+      }, "-=0.4");
+
+      // Atualizar step para indicadores
+      timeline.call(() => setCurrentStep(1), [], 1);
+      timeline.call(() => setCurrentStep(2), [], 2);
+      timeline.call(() => setCurrentStep(3), [], 3);
+
+    }, []);
+
+    return (
+      <div ref={animationRef} className="relative w-full h-full flex items-center justify-center bg-black">
+        {/* Imagem de fundo */}
+        <img
+          src={images[0]}
+          alt="Background"
+          className="frame-a-bg absolute inset-0 w-full h-full object-contain opacity-0"
+        />
+        
+        {/* Imagem do ano */}
+        <img
+          src={images[1]}
+          alt="Ano 1990"
+          className="frame-a-ano absolute inset-0 w-full h-full object-contain opacity-0"
+        />
+        
+        {/* Imagem do texto */}
+        <img
+          src={images[2]}
+          alt="Texto descritivo"
+          className="frame-a-texto absolute inset-0 w-full h-full object-contain opacity-0"
+        />
+
+        {/* Indicadores de progresso */}
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-3">
+          {images.map((_, index) => (
+            <div
+              key={index}
+              className={`w-3 h-3 rounded-full transition-all duration-500 ${
+                index < currentStep ? 'bg-white' : 'bg-white/30'
+              }`}
+            />
+          ))}
+        </div>
+
+        {/* Botão de fechar */}
+        <button
+          onClick={() => setIsModalOpen(false)}
+          className="absolute top-4 right-4 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full transition-all duration-200 z-10"
+        >
+          <X size={20} />
+        </button>
       </div>
     );
   };
@@ -872,20 +973,22 @@ export function TVViewer() {
         </div>
       )}
 
-      {/* Modal do Carrossel */}
+      {/* Modal do Carrossel / Frame A Animation */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent className="w-[80vw] h-[80vh] max-w-none max-h-none p-0 bg-black/90 backdrop-blur-md border-0">
           <DialogHeader className="absolute top-4 right-4 z-50">
-            <DialogTitle className="sr-only">Carrossel de Imagens - Target Zone {selectedZone?.id}</DialogTitle>
+            <DialogTitle className="sr-only">
+              {selectedZone ? `Carrossel de Imagens - Target Zone ${selectedZone.id}` : 'Animação Frame A - FGTS 1990'}
+            </DialogTitle>
             <button
               onClick={() => setIsModalOpen(false)}
               className="bg-black/50 hover:bg-black/70 text-white p-2 rounded-full transition-all duration-200"
-              aria-label="Fechar carrossel"
+              aria-label="Fechar modal"
             >
               <X size={20} />
             </button>
           </DialogHeader>
-          <ImageCarousel />
+          {selectedZone ? <ImageCarousel /> : <FrameAAnimation />}
         </DialogContent>
       </Dialog>
     </div>
