@@ -337,6 +337,7 @@ export function TVViewer() {
   const handleFrameClick = (frameId: string) => {
     console.log('Frame clicked:', frameId);
     if (frameId === 'A') {
+      console.log('Abrindo animação especial do Frame A');
       setSelectedZone(null);
       setCurrentImageIndex(0);
       setIsModalOpen(true);
@@ -419,9 +420,9 @@ export function TVViewer() {
     const animationRef = useRef<HTMLDivElement>(null);
 
     const images = [
-      'https://picsum.photos/800/600?random=100',  // Fundo
-      'https://picsum.photos/800/600?random=101', // Ano (1990)
-      'https://picsum.photos/800/600?random=102'  // Texto
+      '/00_bg.png',   // Fundo
+      '/01_ano.png',  // Ano (1990)
+      '/02_texto.png' // Texto
     ];
 
     useEffect(() => {
@@ -988,7 +989,17 @@ export function TVViewer() {
               <X size={20} />
             </button>
           </DialogHeader>
-          {selectedZone ? <ImageCarousel /> : <FrameAAnimation />}
+          {selectedZone ? (
+            <>
+              {console.log('Renderizando ImageCarousel para zone:', selectedZone.id)}
+              <ImageCarousel />
+            </>
+          ) : (
+            <>
+              {console.log('Renderizando FrameAAnimation')}
+              <FrameAAnimation />
+            </>
+          )}
         </DialogContent>
       </Dialog>
     </div>
