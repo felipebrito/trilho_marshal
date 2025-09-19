@@ -716,11 +716,23 @@ export function TVViewer() {
         setCalibration(resetCalibration);
         console.log('Reset para posição ideal:', resetCalibration);
       }
+
+      // Controle de navegação horizontal com setas
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+        e.preventDefault();
+        const step = 2; // Sensibilidade do movimento
+        const maxPos = getMaxPosition();
+        const direction = e.key === 'ArrowLeft' ? -1 : 1;
+        const newPosition = Math.max(0, Math.min(maxPos, calibration.position + (step * direction)));
+        
+        setCalibration(prev => ({ ...prev, position: newPosition }));
+        console.log('Navegação por teclado:', { key: e.key, newPosition, maxPos });
+      }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [calibration.position, getMaxPosition]);
 
   // Wheel scroll e pinch do trackpad - baseado no HTML original
   const handleWheel = useCallback((e: WheelEvent) => {
@@ -857,7 +869,7 @@ export function TVViewer() {
         {/* Operation Mode HUD */}
         {mode === 'operation' && (
           <div className="absolute top-4 right-4 px-3 py-2 bg-black/60 border border-gray-600 rounded-full text-white text-sm backdrop-blur-sm z-10">
-            • pos {calibration.position.toFixed(1)}% — • tecla <b>C</b> para mostrar Controles
+            • pos {calibration.position.toFixed(1)}% — • tecla <b>C</b> para Controles — • <b>← →</b> para navegar
           </div>
         )}
       </div>
@@ -969,7 +981,7 @@ export function TVViewer() {
           {/* Dicas de teclado */}
           <div className="mt-4 text-xs text-gray-400">
             <p>💡 <strong>Teclas:</strong> C = Alternar modos | R = Reset para posição ideal</p>
-            <p>💡 <strong>Modo Operação:</strong> Pinch/2 dedos = navegação horizontal</p>
+            <p>💡 <strong>Navegação:</strong> ← → = Movimento horizontal | Pinch/2 dedos = navegação horizontal</p>
           </div>
         </div>
       )}
