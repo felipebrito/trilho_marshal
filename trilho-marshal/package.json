@@ -6,7 +6,10 @@
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "udp-server": "node lib/udp-server.js",
+    "test-udp": "node scripts/test-udp.js --interactive",
+    "test-udp-auto": "node scripts/test-udp.js --test"
   },
   "dependencies": {
     "@radix-ui/react-checkbox": "^1.3.3",

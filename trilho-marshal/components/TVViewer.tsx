@@ -4,6 +4,7 @@ import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { gsap } from 'gsap';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { useUDPControl } from '@/hooks/useUDPControl';
 
 interface CalibrationData {
   scale: number;
@@ -137,6 +138,10 @@ export function TVViewer() {
   const [selectedZone, setSelectedZone] = useState<TargetZone | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
+  // Estado do controle UDP
+  const [udpEnabled, setUdpEnabled] = useState(false);
+  const [udpConnected, setUdpConnected] = useState(false);
+
   // Dados dos slides para cada frame (como no HTML original)
   const SLIDE_DATA = {
     A: [
@@ -206,6 +211,25 @@ export function TVViewer() {
     // Limitar para evitar que a imagem saia do viewport
     return Math.min(76.8, maxPos);
   }, [imageDimensions.width, calibration.scale]);
+
+  // Callback para mudança de posição via UDP
+  const handleUDPPositionChange = useCallback((position: number) => {
+    const maxPos = getMaxPosition();
+    const newPosition = Math.max(0, Math.min(maxPos, position));
+    setCalibration(prev => ({ ...prev, position: newPosition }));
+    console.log('UDP: Posição atualizada para', newPosition + '%');
+  }, [getMaxPosition]);
+
+  // Hook UDP Control
+  const { isConnected } = useUDPControl({
+    onPositionChange: handleUDPPositionChange,
+    enabled: udpEnabled
+  });
+
+  // Atualizar estado de conexão UDP
+  useEffect(() => {
+    setUdpConnected(isConnected);
+  }, [isConnected]);
 
 
   // Aplicar transformações (exatamente como no HTML original)
@@ -870,6 +894,11 @@ export function TVViewer() {
         {mode === 'operation' && (
           <div className="absolute top-4 right-4 px-3 py-2 bg-black/60 border border-gray-600 rounded-full text-white text-sm backdrop-blur-sm z-10">
             • pos {calibration.position.toFixed(1)}% — • tecla <b>C</b> para Controles — • <b>← →</b> para navegar
+            {udpEnabled && (
+              <span className="ml-2">
+                — • UDP {udpConnected ? '🟢' : '🔴'}
+              </span>
+            )}
           </div>
         )}
       </div>
@@ -959,6 +988,36 @@ export function TVViewer() {
             </label>
           </div>
 
+          {/* Controle UDP */}
+          <div className="mb-4 p-3 bg-gray-800 rounded-lg">
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-sm font-medium text-white">
+                Controle UDP (Porta 8888)
+              </label>
+              <div className="flex items-center gap-2">
+                <div className={`w-2 h-2 rounded-full ${udpConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                <span className="text-xs text-gray-400">
+                  {udpConnected ? 'Conectado' : 'Desconectado'}
+                </span>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setUdpEnabled(!udpEnabled)}
+                className={`px-3 py-1 text-xs rounded ${
+                  udpEnabled 
+                    ? 'bg-green-600 hover:bg-green-700 text-white' 
+                    : 'bg-gray-600 hover:bg-gray-700 text-white'
+                }`}
+              >
+                {udpEnabled ? 'Desativar UDP' : 'Ativar UDP'}
+              </button>
+              <span className="text-xs text-gray-400 self-center">
+                Envie valores 0-1 para controlar posição
+              </span>
+            </div>
+          </div>
+
           {/* Botões */}
           <div className="flex gap-2">
             <button
@@ -982,6 +1041,7 @@ export function TVViewer() {
           <div className="mt-4 text-xs text-gray-400">
             <p>💡 <strong>Teclas:</strong> C = Alternar modos | R = Reset para posição ideal</p>
             <p>💡 <strong>Navegação:</strong> ← → = Movimento horizontal | Pinch/2 dedos = navegação horizontal</p>
+            <p>💡 <strong>UDP:</strong> Envie valores 0-1 para porta 8888 para controle remoto</p>
           </div>
         </div>
       )}
