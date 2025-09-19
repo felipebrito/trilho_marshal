@@ -380,7 +380,7 @@ export function TVViewer() {
           >
             <div 
               className="slide-bg absolute top-0 left-0 w-full h-full opacity-0 transform scale-110 transition-all duration-600 z-10"
-              style={{ backgroundImage: "url('0.jpg')", backgroundSize: '100% 100%' }}
+              style={{ backgroundImage: "url('https://picsum.photos/400/300?random=" + (index + 1) + "')", backgroundSize: '100% 100%' }}
             />
             <div className="slide-year relative z-30 text-3xl font-bold text-green-700 mb-2 opacity-0 transform translate-y-5 transition-all duration-600 delay-500">
               {slide.year}
@@ -876,9 +876,11 @@ export function TVViewer() {
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent className="w-[80vw] h-[80vh] max-w-none max-h-none p-0 bg-black/90 backdrop-blur-md border-0">
           <DialogHeader className="absolute top-4 right-4 z-50">
+            <DialogTitle className="sr-only">Carrossel de Imagens - Target Zone {selectedZone?.id}</DialogTitle>
             <button
               onClick={() => setIsModalOpen(false)}
               className="bg-black/50 hover:bg-black/70 text-white p-2 rounded-full transition-all duration-200"
+              aria-label="Fechar carrossel"
             >
               <X size={20} />
             </button>
