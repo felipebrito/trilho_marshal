@@ -15,21 +15,7 @@ interface CalibrationData {
   showGrid: boolean;
 }
 
-interface Frame {
-  id: string;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
-
-interface TargetZone {
-  id: string;
-  x: number;
-  y: number;
-  radius: number;
-  images: string[];
-}
+// Interfaces removidas - usando apenas bullets agora
 
 interface Bullet {
   id: string;
@@ -38,7 +24,7 @@ interface Bullet {
   radius: number;
   folder: string;
   label: string;
-  size: number; // Multiplicador de tamanho (1.0 = normal, 2.0 = 200% maior)
+  size: number; // Multiplicador de tamanho (1.0 = normal, 5.0 = 500% maior)
   color: string; // Cor do bullet
 }
 
@@ -69,15 +55,7 @@ export function TVViewer() {
     { id: 'B12', x: 13000, y: 3200, radius: 30, folder: 'FUTURO', label: 'FUTURO', size: 2.0, color: '#fbbf24' },
   ]);
 
-  // Frames antigos mantidos para compatibilidade
-  const [frames, setFrames] = useState<Frame[]>([
-    { id: 'A', x: 1700, y: 5000, width: 600, height: 400 },
-    { id: 'B', x: 4000, y: 3400, width: 200, height: 150 },
-    { id: 'C', x: 7000, y: 3100, width: 200, height: 150 },
-    { id: 'D', x: 10000, y: 3500, width: 200, height: 150 },
-    { id: 'E', x: 13000, y: 3300, width: 200, height: 150 },
-    { id: 'F', x: 16000, y: 3600, width: 200, height: 150 },
-  ]);
+  // Frames removidos - usando apenas bullets agora
 
   // Target zones posicionados ao lado direito de cada frame
   const [targetZones, setTargetZones] = useState<TargetZone[]>([
@@ -171,13 +149,13 @@ export function TVViewer() {
     return imageFiles.map(file => `/imagens/${folder}/${file}`);
   };
 
-  // Função para salvar posições dos bullets
+  // Função para salvar configurações dos bullets
   const saveBulletPositions = () => {
     localStorage.setItem('trilho-marshal-bullets', JSON.stringify(bullets));
-    console.log('Posições dos bullets salvas:', bullets);
+    console.log('Configurações dos bullets salvas:', bullets);
   };
 
-  // Função para carregar posições dos bullets
+  // Função para carregar configurações dos bullets
   const loadBulletPositions = () => {
     const saved = localStorage.getItem('trilho-marshal-bullets');
     if (saved) {
@@ -186,13 +164,13 @@ export function TVViewer() {
         // Garantir que as novas propriedades existam
         const bulletsWithDefaults = parsedBullets.map((bullet: any) => ({
           ...bullet,
-          size: bullet.size || 2.0,
+          size: bullet.size || 5.0,
           color: bullet.color || '#22c55e'
         }));
         setBullets(bulletsWithDefaults);
-        console.log('Posições dos bullets carregadas:', bulletsWithDefaults);
+        console.log('Configurações dos bullets carregadas:', bulletsWithDefaults);
       } catch (error) {
-        console.error('Erro ao carregar posições dos bullets:', error);
+        console.error('Erro ao carregar configurações dos bullets:', error);
       }
     }
   };
@@ -202,8 +180,9 @@ export function TVViewer() {
     loadBulletPositions();
   }, []);
 
-  const [selectedZone, setSelectedZone] = useState<TargetZone | null>(null);
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  // Variáveis comentadas - usando apenas bullets agora
+  // const [selectedZone, setSelectedZone] = useState<TargetZone | null>(null);
+  // const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   // Estado do controle UDP
   const [udpEnabled, setUdpEnabled] = useState(false);
@@ -325,7 +304,8 @@ export function TVViewer() {
     worldRef.current.style.transform = `translate(${clampedTranslateX}px, ${translateY}px) scale(${calibration.scale})`;
   }, [calibration, getCameraX, imageDimensions]);
 
-  // Atualizar visibilidade dos frames e target zones
+  // Função comentada - usando apenas bullets agora
+  /*
   const updateFramesVisibility = useCallback(() => {
     const cameraX = getCameraX();
     const cameraRight = cameraX + 1080; // largura do viewport
@@ -355,7 +335,8 @@ export function TVViewer() {
         zoneElement.classList.toggle('active', isVisible);
       }
     });
-  }, [frames, targetZones, calibration.offsetY, getCameraX]);
+  }, [calibration.offsetY, getCameraX]);
+  */
 
   // Carregar imagem
   const handleImageLoad = (event: React.SyntheticEvent<HTMLImageElement>) => {
@@ -444,11 +425,14 @@ export function TVViewer() {
     }
   };
 
+  // Função comentada - usando apenas bullets agora
+  /*
   const handleTargetZoneClick = (zone: TargetZone) => {
     setSelectedZone(zone);
     setCurrentImageIndex(0);
     setIsModalOpen(true);
   };
+  */
 
   // Função para clicar em um bullet
   const handleBulletClick = (bullet: Bullet) => {
@@ -464,6 +448,22 @@ export function TVViewer() {
     ));
   };
 
+  // Função para atualizar tamanho de um bullet
+  const updateBulletSize = (bulletId: string, size: number) => {
+    setBullets(prev => prev.map(bullet => 
+      bullet.id === bulletId ? { ...bullet, size } : bullet
+    ));
+  };
+
+  // Função para atualizar cor de um bullet
+  const updateBulletColor = (bulletId: string, color: string) => {
+    setBullets(prev => prev.map(bullet => 
+      bullet.id === bulletId ? { ...bullet, color } : bullet
+    ));
+  };
+
+  // Funções comentadas - usando apenas bullets agora
+  /*
   const nextImage = () => {
     if (selectedZone) {
       setCurrentImageIndex(prev => (prev + 1) % selectedZone.images.length);
@@ -475,6 +475,7 @@ export function TVViewer() {
       setCurrentImageIndex(prev => prev === 0 ? selectedZone.images.length - 1 : prev - 1);
     }
   };
+  */
 
   // Componente para o slider dentro de cada frame
   const FrameSlider = ({ frameId }: { frameId: string }) => {
@@ -746,6 +747,8 @@ export function TVViewer() {
   };
 
   // Componente do carrossel modal
+  // Componente comentado - usando apenas bullets agora
+  /*
   const ImageCarousel = () => {
     if (!selectedZone) return null;
 
@@ -808,6 +811,7 @@ export function TVViewer() {
       </div>
     );
   };
+  */
 
   // Touch events - baseado no HTML original
   useEffect(() => {
@@ -1036,90 +1040,50 @@ export function TVViewer() {
             style={{ imageRendering: 'auto' }}
           />
           
-          {/* Frames */}
-          {/* <div id="frames" className="absolute inset-0 pointer-events-auto">
-            {frames.map(frame => (
-              <div
-                key={frame.id}
-                id={`frame-${frame.id}`}
-                className="absolute border-2 border-white/70 bg-black/35 text-white text-xs font-mono p-0 rounded-lg opacity-60 transition-all duration-150 pointer-events-auto cursor-pointer overflow-hidden"
-                style={{
-                  left: `${frame.x}px`,
-                  top: `${frame.y}px`,
-                  width: `${frame.width}px`,
-                  height: `${frame.height}px`,
-                  zIndex: 10,
-                }}
-                onClick={() => handleFrameClick(frame.id)}
-              >
-                <FrameSlider frameId={frame.id} />
-              </div>
-            ))}
-          </div> */}
+          {/* Frames removidos - usando apenas bullets agora */}
 
-          {/* Target Zones - Círculos Pulsantes */}
-          {/* <div id="target-zones" className="absolute inset-0 pointer-events-auto">
-            {targetZones.map(zone => (
-              <div
-                key={zone.id}
-                id={`target-${zone.id}`}
-                className="absolute opacity-60 transition-all duration-300 pointer-events-auto cursor-pointer target-zone"
-                style={{
-                  left: `${zone.x - zone.radius}px`,
-                  top: `${zone.y - zone.radius}px`,
-                  width: `${zone.radius * 2}px`,
-                  height: `${zone.radius * 2}px`,
-                  zIndex: 15,
-                }}
-                onClick={() => handleTargetZoneClick(zone)}
-              >
-                <div className="w-full h-full rounded-full bg-gradient-to-r from-blue-500 to-purple-600 animate-pulse border-2 border-white/50 shadow-lg flex items-center justify-center">
-                  <div className="text-white text-xs font-bold">T{zone.id.slice(1)}</div>
-                </div>
-              </div>
-            ))}
-          </div> */}
+          {/* Target zones removidos - usando apenas bullets agora */}
 
-          {/* Bullets - Pontos Pulsantes */}
-          <div id="bullets" className="absolute inset-0 pointer-events-auto">
-            {bullets.map(bullet => {
-              const actualRadius = bullet.radius * bullet.size;
-              return (
-                <div
-                  key={bullet.id}
-                  id={`bullet-${bullet.id}`}
-                  className="absolute opacity-70 transition-all duration-300 pointer-events-auto cursor-pointer target-zone"
+        {/* Bullets - Pontos Pulsantes */}
+        <div id="bullets" className="absolute inset-0 pointer-events-auto">
+          {bullets.map(bullet => {
+            const actualRadius = bullet.radius * bullet.size;
+            return (
+              <div
+                key={bullet.id}
+                id={`bullet-${bullet.id}`}
+                className="absolute opacity-70 transition-all duration-300 pointer-events-auto cursor-pointer target-zone"
+                style={{
+                  left: `${bullet.x - actualRadius}px`,
+                  top: `${bullet.y - actualRadius}px`,
+                  width: `${actualRadius * 2}px`,
+                  height: `${actualRadius * 2}px`,
+                  zIndex: 20,
+                }}
+                onClick={() => handleBulletClick(bullet)}
+              >
+                <div 
+                  className="w-full h-full rounded-full animate-pulse border-2 border-white/70 shadow-lg flex items-center justify-center"
                   style={{
-                    left: `${bullet.x - actualRadius}px`,
-                    top: `${bullet.y - actualRadius}px`,
-                    width: `${actualRadius * 2}px`,
-                    height: `${actualRadius * 2}px`,
-                    zIndex: 20,
+                    background: `linear-gradient(135deg, ${bullet.color}, ${bullet.color}dd)`,
+                    transform: `scale(${bullet.size})`,
+                    transformOrigin: 'center',
                   }}
-                  onClick={() => handleBulletClick(bullet)}
                 >
                   <div 
-                    className="w-full h-full rounded-full animate-pulse border-2 border-white/70 shadow-lg flex items-center justify-center"
+                    className="text-white font-bold"
                     style={{
-                      background: `linear-gradient(135deg, ${bullet.color}, ${bullet.color}dd)`,
-                      transform: `scale(${bullet.size})`,
-                      transformOrigin: 'center',
+                      fontSize: `${18 / bullet.size}px`,
+                      transform: `scale(${1 / bullet.size})`,
                     }}
                   >
-                    <div 
-                      className="text-white font-bold"
-                      style={{
-                        fontSize: `${18 / bullet.size}px`,
-                        transform: `scale(${1 / bullet.size})`,
-                      }}
-                    >
-                      {bullet.label}
-                    </div>
+                    {bullet.label}
                   </div>
                 </div>
-              );
-            })}
-          </div>
+              </div>
+            );
+          })}
+        </div>
         </div>
 
         {/* Grid */}
@@ -1290,94 +1254,96 @@ export function TVViewer() {
               Salvar
             </button>
             
-            {/* Controles dos Bullets */}
-            <div className="mt-4 p-3 bg-gray-800 rounded-lg">
-              <h3 className="text-sm font-semibold text-white mb-2">🎯 Bullets (12 pontos pulsantes)</h3>
-              <div className="flex gap-2 flex-wrap">
+        {/* Controles dos Bullets */}
+        <div className="mt-4 p-3 bg-gray-800 rounded-lg">
+          <h3 className="text-sm font-semibold text-white mb-2">🎯 Bullets (12 pontos pulsantes)</h3>
+          
+          {/* Controles de posição */}
+          <div className="flex gap-2 flex-wrap mb-3">
+            <button
+              onClick={saveBulletPositions}
+              className="px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-xs"
+            >
+              Salvar Posições
+            </button>
+            <button
+              onClick={loadBulletPositions}
+              className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs"
+            >
+              Carregar Posições
+            </button>
+            <button
+              onClick={() => {
+                const newBullets = bullets.map(bullet => ({
+                  ...bullet,
+                  x: Math.random() * 15000 + 1000,
+                  y: Math.random() * 2000 + 2000
+                }));
+                setBullets(newBullets);
+              }}
+              className="px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded text-xs"
+            >
+              Posições Aleatórias
+            </button>
+          </div>
+
+          {/* Controles de tamanho e cor */}
+          <div className="space-y-3">
+            <div>
+              <label className="text-xs text-gray-300 block mb-1">Tamanho Global</label>
+              <div className="flex gap-2">
                 <button
-                  onClick={saveBulletPositions}
-                  className="px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-xs"
+                  onClick={() => {
+                    const newBullets = bullets.map(bullet => ({ ...bullet, size: 1.0 }));
+                    setBullets(newBullets);
+                  }}
+                  className="px-2 py-1 bg-gray-600 hover:bg-gray-700 text-white rounded text-xs"
                 >
-                  Salvar Posições
-                </button>
-                <button
-                  onClick={loadBulletPositions}
-                  className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs"
-                >
-                  Carregar Posições
+                  Normal (1x)
                 </button>
                 <button
                   onClick={() => {
-                    const newBullets = bullets.map(bullet => ({
-                      ...bullet,
-                      x: Math.random() * 15000 + 1000,
-                      y: Math.random() * 2000 + 2000
-                    }));
+                    const newBullets = bullets.map(bullet => ({ ...bullet, size: 2.0 }));
                     setBullets(newBullets);
                   }}
-                  className="px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded text-xs"
+                  className="px-2 py-1 bg-gray-600 hover:bg-gray-700 text-white rounded text-xs"
                 >
-                  Posições Aleatórias
+                  Grande (2x)
+                </button>
+                <button
+                  onClick={() => {
+                    const newBullets = bullets.map(bullet => ({ ...bullet, size: 3.0 }));
+                    setBullets(newBullets);
+                  }}
+                  className="px-2 py-1 bg-gray-600 hover:bg-gray-700 text-white rounded text-xs"
+                >
+                  Grande (3x)
                 </button>
               </div>
-              
-              {/* Controles de tamanho e cor */}
-              <div className="space-y-3 mt-3">
-                <div>
-                  <label className="text-xs text-gray-300 block mb-1">Tamanho Global</label>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => {
-                        const newBullets = bullets.map(bullet => ({ ...bullet, size: 1.0 }));
-                        setBullets(newBullets);
-                      }}
-                      className="px-2 py-1 bg-gray-600 hover:bg-gray-700 text-white rounded text-xs"
-                    >
-                      Normal (1x)
-                    </button>
-                    <button
-                      onClick={() => {
-                        const newBullets = bullets.map(bullet => ({ ...bullet, size: 2.0 }));
-                        setBullets(newBullets);
-                      }}
-                      className="px-2 py-1 bg-gray-600 hover:bg-gray-700 text-white rounded text-xs"
-                    >
-                      Grande (2x)
-                    </button>
-                    <button
-                      onClick={() => {
-                        const newBullets = bullets.map(bullet => ({ ...bullet, size: 3.0 }));
-                        setBullets(newBullets);
-                      }}
-                      className="px-2 py-1 bg-gray-600 hover:bg-gray-700 text-white rounded text-xs"
-                    >
-                      Grande (3x)
-                    </button>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-xs text-gray-300 block mb-1">Cores Aleatórias</label>
-                  <button
-                    onClick={() => {
-                      const colors = ['#22c55e', '#3b82f6', '#8b5cf6', '#f59e0b', '#ef4444', '#06b6d4', '#84cc16', '#f97316', '#ec4899', '#6366f1', '#14b8a6', '#fbbf24'];
-                      const newBullets = bullets.map(bullet => ({
-                        ...bullet,
-                        color: colors[Math.floor(Math.random() * colors.length)]
-                      }));
-                      setBullets(newBullets);
-                    }}
-                    className="px-3 py-1 bg-pink-600 hover:bg-pink-700 text-white rounded text-xs"
-                  >
-                    Cores Aleatórias
-                  </button>
-                </div>
-              </div>
-
-              <p className="text-xs text-gray-400 mt-2">
-                Clique nos bullets para abrir carrossel com imagens da pasta correspondente
-              </p>
             </div>
+
+            <div>
+              <label className="text-xs text-gray-300 block mb-1">Cores Aleatórias</label>
+              <button
+                onClick={() => {
+                  const colors = ['#22c55e', '#3b82f6', '#8b5cf6', '#f59e0b', '#ef4444', '#06b6d4', '#84cc16', '#f97316', '#ec4899', '#6366f1', '#14b8a6', '#fbbf24'];
+                  const newBullets = bullets.map(bullet => ({
+                    ...bullet,
+                    color: colors[Math.floor(Math.random() * colors.length)]
+                  }));
+                  setBullets(newBullets);
+                }}
+                className="px-3 py-1 bg-pink-600 hover:bg-pink-700 text-white rounded text-xs"
+              >
+                Cores Aleatórias
+              </button>
+            </div>
+          </div>
+
+          <p className="text-xs text-gray-400 mt-2">
+            Clique nos bullets para abrir animação sequencial com imagens da pasta correspondente
+          </p>
+        </div>
           </div>
           
           {/* Dicas de teclado */}
@@ -1411,11 +1377,6 @@ export function TVViewer() {
             <>
               {console.log('Renderizando BulletAnimation para bullet:', selectedBullet.id)}
               <BulletAnimation bullet={selectedBullet} />
-            </>
-          ) : selectedZone ? (
-            <>
-              {console.log('Renderizando ImageCarousel para zone:', selectedZone.id)}
-              <ImageCarousel />
             </>
           ) : (
             <>
