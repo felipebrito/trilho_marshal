@@ -31,6 +31,15 @@ interface TargetZone {
   images: string[];
 }
 
+interface Bullet {
+  id: string;
+  x: number;
+  y: number;
+  radius: number;
+  folder: string;
+  label: string;
+}
+
 export function TVViewer() {
   const [mode, setMode] = useState<'calibration' | 'operation'>('calibration');
   const [calibration, setCalibration] = useState<CalibrationData>({
@@ -42,8 +51,25 @@ export function TVViewer() {
     showGrid: false,
   });
   const [imageDimensions, setImageDimensions] = useState({ width: 20000, height: 4000 });
+  // Bullets pulsantes - pontos redondos clicáveis
+  const [bullets, setBullets] = useState<Bullet[]>([
+    { id: 'B1', x: 2000, y: 3000, radius: 30, folder: '1966', label: '1966' },
+    { id: 'B2', x: 3000, y: 3200, radius: 30, folder: '1989', label: '1989' },
+    { id: 'B3', x: 4000, y: 3100, radius: 30, folder: '1990', label: '1990' },
+    { id: 'B4', x: 5000, y: 3300, radius: 30, folder: '2004', label: '2004' },
+    { id: 'B5', x: 6000, y: 3150, radius: 30, folder: '2005', label: '2005' },
+    { id: 'B6', x: 7000, y: 3250, radius: 30, folder: '2015', label: '2015' },
+    { id: 'B7', x: 8000, y: 3100, radius: 30, folder: '2016', label: '2016' },
+    { id: 'B8', x: 9000, y: 3200, radius: 30, folder: '2017', label: '2017' },
+    { id: 'B9', x: 10000, y: 3150, radius: 30, folder: '2019', label: '2019' },
+    { id: 'B10', x: 11000, y: 3250, radius: 30, folder: '2024', label: '2024' },
+    { id: 'B11', x: 12000, y: 3100, radius: 30, folder: '2025', label: '2025' },
+    { id: 'B12', x: 13000, y: 3200, radius: 30, folder: 'FUTURO', label: 'FUTURO' },
+  ]);
+
+  // Frames antigos mantidos para compatibilidade
   const [frames, setFrames] = useState<Frame[]>([
-    { id: 'A', x: 1000, y: 3200, width: 200, height: 150 },
+    { id: 'A', x: 1700, y: 5000, width: 600, height: 400 },
     { id: 'B', x: 4000, y: 3400, width: 200, height: 150 },
     { id: 'C', x: 7000, y: 3100, width: 200, height: 150 },
     { id: 'D', x: 10000, y: 3500, width: 200, height: 150 },
@@ -55,8 +81,8 @@ export function TVViewer() {
   const [targetZones, setTargetZones] = useState<TargetZone[]>([
     { 
       id: 'T1', 
-      x: 1000 + 200 + 50, // Frame A x + width + offset
-      y: 3200 + 75, // Frame A y + height/2 (centro vertical)
+      x: 1700 + 600 + 50, // Frame A x + width + offset
+      y: 5000 + 200, // Frame A y + height/2 (centro vertical)
       radius: 60,
       images: [
         'https://picsum.photos/800/600?random=1',
@@ -135,6 +161,39 @@ export function TVViewer() {
 
   // Estado do modal
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedBullet, setSelectedBullet] = useState<Bullet | null>(null);
+
+  // Função para carregar imagens de uma pasta específica
+  const loadImagesFromFolder = (folder: string): string[] => {
+    const imageFiles = ['00_bg.png', '01_ano.png', '02_texto.png', '03_imagem.png'];
+    return imageFiles.map(file => `/imagens/${folder}/${file}`);
+  };
+
+  // Função para salvar posições dos bullets
+  const saveBulletPositions = () => {
+    localStorage.setItem('trilho-marshal-bullets', JSON.stringify(bullets));
+    console.log('Posições dos bullets salvas:', bullets);
+  };
+
+  // Função para carregar posições dos bullets
+  const loadBulletPositions = () => {
+    const saved = localStorage.getItem('trilho-marshal-bullets');
+    if (saved) {
+      try {
+        const parsedBullets = JSON.parse(saved);
+        setBullets(parsedBullets);
+        console.log('Posições dos bullets carregadas:', parsedBullets);
+      } catch (error) {
+        console.error('Erro ao carregar posições dos bullets:', error);
+      }
+    }
+  };
+
+  // Carregar posições dos bullets ao inicializar
+  useEffect(() => {
+    loadBulletPositions();
+  }, []);
+
   const [selectedZone, setSelectedZone] = useState<TargetZone | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
@@ -221,8 +280,10 @@ export function TVViewer() {
       return;
     }
     
+    // Converter de 0-1 para 0-100%
+    const percentage = position * 100;
     const maxPos = getMaxPosition();
-    const newPosition = Math.max(0, Math.min(maxPos, position));
+    const newPosition = Math.max(0, Math.min(maxPos, percentage));
     setCalibration(prev => ({ ...prev, position: newPosition }));
     console.log('UDP: Posição atualizada para', newPosition + '%');
   }, [getMaxPosition, mode]);
@@ -381,6 +442,20 @@ export function TVViewer() {
     setIsModalOpen(true);
   };
 
+  // Função para clicar em um bullet
+  const handleBulletClick = (bullet: Bullet) => {
+    console.log('Bullet clicado:', bullet);
+    setSelectedBullet(bullet);
+    setIsModalOpen(true);
+  };
+
+  // Função para atualizar posição de um bullet (para modo de calibração)
+  const updateBulletPosition = (bulletId: string, x: number, y: number) => {
+    setBullets(prev => prev.map(bullet => 
+      bullet.id === bulletId ? { ...bullet, x, y } : bullet
+    ));
+  };
+
   const nextImage = () => {
     if (selectedZone) {
       setCurrentImageIndex(prev => (prev + 1) % selectedZone.images.length);
@@ -533,11 +608,131 @@ export function TVViewer() {
 
         {/* Botão de fechar */}
         <button
-          onClick={() => setIsModalOpen(false)}
+          onClick={() => {
+            setIsModalOpen(false);
+            setSelectedBullet(null);
+          }}
           className="absolute top-4 right-4 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full transition-all duration-200 z-10"
         >
           <X size={20} />
         </button>
+      </div>
+    );
+  };
+
+  // Componente de animação sequencial para Bullets
+  const BulletAnimation = ({ bullet }: { bullet: Bullet }) => {
+    const [currentStep, setCurrentStep] = useState(0);
+    const animationRef = useRef<HTMLDivElement>(null);
+
+    const images = loadImagesFromFolder(bullet.folder);
+
+    useEffect(() => {
+      if (!animationRef.current) return;
+
+      // Animação de entrada do modal
+      gsap.fromTo(animationRef.current, 
+        { opacity: 0, scale: 0.8 },
+        { opacity: 1, scale: 1, duration: 0.5, ease: "power2.out" }
+      );
+
+      // Sequência de animação das imagens
+      const timeline = gsap.timeline({ delay: 0.5 });
+
+      // Primeira imagem (fundo) - aparece imediatamente
+      timeline.to(`.bullet-${bullet.id}-bg`, {
+        opacity: 1,
+        duration: 0.8,
+        ease: "power2.out"
+      });
+
+      // Segunda imagem (ano) - aparece após 1.5s
+      timeline.to(`.bullet-${bullet.id}-ano`, {
+        opacity: 1,
+        duration: 0.8,
+        ease: "power2.out"
+      }, 1.5);
+
+      // Terceira imagem (texto) - aparece após 3s
+      timeline.to(`.bullet-${bullet.id}-texto`, {
+        opacity: 1,
+        duration: 0.8,
+        ease: "power2.out"
+      }, 3);
+
+      // Quarta imagem (se existir) - aparece após 4.5s
+      if (images[3]) {
+        timeline.to(`.bullet-${bullet.id}-imagem`, {
+          opacity: 1,
+          duration: 0.8,
+          ease: "power2.out"
+        }, 4.5);
+      }
+
+      // Atualizar step para indicadores
+      timeline.call(() => setCurrentStep(1), [], 1);
+      timeline.call(() => setCurrentStep(2), [], 2);
+      timeline.call(() => setCurrentStep(3), [], 3);
+      if (images[3]) {
+        timeline.call(() => setCurrentStep(4), [], 4);
+      }
+
+    }, [bullet.id, images.length]);
+
+    return (
+      <div ref={animationRef} className="relative w-full h-full flex items-center justify-center bg-black">
+        {/* Imagem de fundo */}
+        <img
+          src={images[0]}
+          alt="Background"
+          className={`bullet-${bullet.id}-bg absolute inset-0 w-full h-full object-contain opacity-0`}
+        />
+        
+        {/* Imagem do ano */}
+        {images[1] && (
+          <img
+            src={images[1]}
+            alt="Ano"
+            className={`bullet-${bullet.id}-ano absolute inset-0 w-full h-full object-contain opacity-0`}
+          />
+        )}
+        
+        {/* Imagem do texto */}
+        {images[2] && (
+          <img
+            src={images[2]}
+            alt="Texto descritivo"
+            className={`bullet-${bullet.id}-texto absolute inset-0 w-full h-full object-contain opacity-0`}
+          />
+        )}
+
+        {/* Imagem adicional (se existir) */}
+        {images[3] && (
+          <img
+            src={images[3]}
+            alt="Imagem adicional"
+            className={`bullet-${bullet.id}-imagem absolute inset-0 w-full h-full object-contain opacity-0`}
+          />
+        )}
+
+        {/* Indicadores de progresso */}
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-3">
+          {images.map((_, index) => (
+            <div
+              key={index}
+              className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                index <= currentStep ? 'bg-white' : 'bg-white/30'
+              }`}
+            />
+          ))}
+        </div>
+
+        {/* Título do bullet */}
+        <div className="absolute top-8 left-1/2 -translate-x-1/2">
+          <h2 className="text-white text-2xl font-bold bg-black/50 px-4 py-2 rounded-lg">
+            {bullet.label}
+          </h2>
+        </div>
       </div>
     );
   };
@@ -876,6 +1071,29 @@ export function TVViewer() {
               </div>
             ))}
           </div>
+
+          {/* Bullets - Pontos Pulsantes */}
+          <div id="bullets" className="absolute inset-0 pointer-events-auto">
+            {bullets.map(bullet => (
+              <div
+                key={bullet.id}
+                id={`bullet-${bullet.id}`}
+                className="absolute opacity-70 transition-all duration-300 pointer-events-auto cursor-pointer target-zone"
+                style={{
+                  left: `${bullet.x - bullet.radius}px`,
+                  top: `${bullet.y - bullet.radius}px`,
+                  width: `${bullet.radius * 2}px`,
+                  height: `${bullet.radius * 2}px`,
+                  zIndex: 20,
+                }}
+                onClick={() => handleBulletClick(bullet)}
+              >
+                <div className="w-full h-full rounded-full bg-gradient-to-r from-green-500 to-blue-600 animate-pulse border-2 border-white/70 shadow-lg flex items-center justify-center">
+                  <div className="text-white text-xs font-bold">{bullet.label}</div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Grid */}
@@ -1045,6 +1263,41 @@ export function TVViewer() {
             >
               Salvar
             </button>
+            
+            {/* Controles dos Bullets */}
+            <div className="mt-4 p-3 bg-gray-800 rounded-lg">
+              <h3 className="text-sm font-semibold text-white mb-2">🎯 Bullets (12 pontos pulsantes)</h3>
+              <div className="flex gap-2 flex-wrap">
+                <button
+                  onClick={saveBulletPositions}
+                  className="px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-xs"
+                >
+                  Salvar Posições
+                </button>
+                <button
+                  onClick={loadBulletPositions}
+                  className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs"
+                >
+                  Carregar Posições
+                </button>
+                <button
+                  onClick={() => {
+                    const newBullets = bullets.map(bullet => ({
+                      ...bullet,
+                      x: Math.random() * 15000 + 1000,
+                      y: Math.random() * 2000 + 2000
+                    }));
+                    setBullets(newBullets);
+                  }}
+                  className="px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded text-xs"
+                >
+                  Posições Aleatórias
+                </button>
+              </div>
+              <p className="text-xs text-gray-400 mt-2">
+                Clique nos bullets para abrir carrossel com imagens da pasta correspondente
+              </p>
+            </div>
           </div>
           
           {/* Dicas de teclado */}
@@ -1064,14 +1317,22 @@ export function TVViewer() {
               {selectedZone ? `Carrossel de Imagens - Target Zone ${selectedZone.id}` : 'Animação Frame A - FGTS 1990'}
             </DialogTitle>
             <button
-              onClick={() => setIsModalOpen(false)}
+              onClick={() => {
+            setIsModalOpen(false);
+            setSelectedBullet(null);
+          }}
               className="bg-black/50 hover:bg-black/70 text-white p-2 rounded-full transition-all duration-200"
               aria-label="Fechar modal"
             >
               <X size={20} />
             </button>
           </DialogHeader>
-          {selectedZone ? (
+          {selectedBullet ? (
+            <>
+              {console.log('Renderizando BulletAnimation para bullet:', selectedBullet.id)}
+              <BulletAnimation bullet={selectedBullet} />
+            </>
+          ) : selectedZone ? (
             <>
               {console.log('Renderizando ImageCarousel para zone:', selectedZone.id)}
               <ImageCarousel />

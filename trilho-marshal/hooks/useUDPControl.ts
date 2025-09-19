@@ -14,7 +14,7 @@ export function useUDPControl({ onPositionChange, enabled = true }: UDPControlOp
 
     try {
       // Conectar ao WebSocket do servidor UDP
-      const ws = new WebSocket(`ws://localhost:3002/api/udp-control/ws`);
+      const ws = new WebSocket(`ws://localhost:8081`);
       
       ws.onopen = () => {
         console.log('UDP Control: WebSocket conectado');
@@ -25,10 +25,9 @@ export function useUDPControl({ onPositionChange, enabled = true }: UDPControlOp
         try {
           const data = JSON.parse(event.data);
           if (data.type === 'position' && typeof data.value === 'number') {
-            // Converter de 0-1 para 0-100%
-            const percentage = data.value * 100;
-            onPositionChange(percentage);
-            console.log('UDP Control: Posição recebida:', percentage + '%');
+            // Usar valor diretamente (0-1)
+            onPositionChange(data.value);
+            console.log('UDP Control: Posição recebida:', data.value);
           }
         } catch (error) {
           console.error('UDP Control: Erro ao processar mensagem:', error);

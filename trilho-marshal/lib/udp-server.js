@@ -3,7 +3,7 @@ const WebSocket = require('ws');
 
 // Servidor UDP
 const udpServer = dgram.createSocket('udp4');
-const wss = new WebSocket.Server({ port: 8080 });
+const wss = new WebSocket.Server({ port: 8081 }); // Mudança para porta 8081
 
 let clients = new Set();
 
@@ -36,12 +36,15 @@ function broadcastToClients(data) {
 // Servidor UDP
 udpServer.on('message', (msg, rinfo) => {
   try {
-    const data = msg.toString();
-    const position = parseFloat(data);
+    const data = msg.toString().trim();
+    
+    // Remover prefixo "value " se existir
+    const cleanData = data.replace(/^value\s+/, '');
+    const position = parseFloat(cleanData);
     
     // Validar se está entre 0 e 1
     if (isNaN(position) || position < 0 || position > 1) {
-      console.log('UDP: Posição inválida recebida:', data);
+      console.log('UDP: Posição inválida recebida:', data, '->', cleanData, '->', position);
       return;
     }
 
@@ -72,5 +75,5 @@ udpServer.bind(8888);
 
 console.log('UDP Control Server iniciado:');
 console.log('- UDP Server: porta 8888');
-console.log('- WebSocket Server: porta 8080');
+console.log('- WebSocket Server: porta 8081');
 console.log('- Envie valores entre 0 e 1 para controlar a posição');
