@@ -50,6 +50,7 @@ interface Bullet {
 }
 
 export function TVViewer() {
+  console.log('🚀 TVViewer component carregado!');
   const [mode, setMode] = useState<'calibration' | 'operation'>('calibration');
   const [calibration, setCalibration] = useState<CalibrationData>({
     scale: 1.0,
@@ -64,6 +65,13 @@ export function TVViewer() {
 
   // Estado para armazenar as dimensões originais da imagem
   const [originalImageDimensions, setOriginalImageDimensions] = useState<{width: number, height: number} | null>(null);
+
+  // Teste simples para verificar se o componente está funcionando
+  console.log('🔍 Estado atual do componente:', {
+    mode,
+    calibration,
+    originalImageDimensions
+  });
 
   // Configurações de animação
   const animationConfig = {
@@ -1818,6 +1826,15 @@ export function TVViewer() {
                 className="px-3 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700"
               >
                 Reset Completo
+              </button>
+              <button
+                onClick={() => {
+                  alert('Teste de clique funcionando!');
+                  console.log('🧪 Botão TESTE clicado');
+                }}
+                className="px-3 py-1 bg-purple-600 text-white text-xs rounded hover:bg-purple-700"
+              >
+                TESTE
               </button>
             </div>
           </div>
