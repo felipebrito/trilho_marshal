@@ -249,6 +249,10 @@ export function TVViewer() {
     };
     localStorage.setItem('trilho-marshal-config', JSON.stringify(config));
     console.log('💾 Configurações salvas manualmente:', config);
+    console.log('📐 Dimensões da imagem sendo salvas:', {
+      imageWidth: calibration.imageWidth,
+      imageHeight: calibration.imageHeight
+    });
     alert('✅ Configurações salvas com sucesso!');
   };
 
@@ -563,8 +567,18 @@ export function TVViewer() {
         
         // Carregar calibração
         if (config.calibration) {
-          setCalibration(prev => ({ ...prev, ...config.calibration }));
-          console.log('✅ Calibração carregada:', config.calibration);
+          // Garantir que as dimensões da imagem existam (compatibilidade com versões antigas)
+          const calibrationWithDefaults = {
+            ...config.calibration,
+            imageWidth: config.calibration.imageWidth || 20000,
+            imageHeight: config.calibration.imageHeight || 4000
+          };
+          setCalibration(prev => ({ ...prev, ...calibrationWithDefaults }));
+          console.log('✅ Calibração carregada:', calibrationWithDefaults);
+          console.log('📐 Dimensões da imagem carregadas:', {
+            imageWidth: calibrationWithDefaults.imageWidth,
+            imageHeight: calibrationWithDefaults.imageHeight
+          });
         }
         
         // Carregar frames
@@ -614,6 +628,13 @@ export function TVViewer() {
 
   // Handlers
   const handleCalibrationChange = (newCalibration: Partial<CalibrationData>) => {
+    console.log('🔧 Mudança de calibração:', newCalibration);
+    if (newCalibration.imageWidth || newCalibration.imageHeight) {
+      console.log('📐 Dimensões sendo alteradas:', {
+        imageWidth: newCalibration.imageWidth,
+        imageHeight: newCalibration.imageHeight
+      });
+    }
     setCalibration(prev => ({ ...prev, ...newCalibration }));
   };
 
