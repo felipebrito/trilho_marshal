@@ -62,6 +62,9 @@ export function TVViewer() {
     imageHeight: 4000,
   });
 
+  // Estado para armazenar as dimensões originais da imagem
+  const [originalImageDimensions, setOriginalImageDimensions] = useState<{width: number, height: number} | null>(null);
+
   // Configurações de animação
   const animationConfig = {
     modalEntry: {
@@ -506,6 +509,10 @@ export function TVViewer() {
       width: img.naturalWidth,
       height: img.naturalHeight,
     };
+    
+    // Armazenar dimensões originais da imagem
+    setOriginalImageDimensions(newDimensions);
+    
     // Atualizar dimensões na calibração se ainda não foram definidas
     if (calibration.imageWidth === 20000 && calibration.imageHeight === 4000) {
       setCalibration(prev => ({
@@ -515,6 +522,7 @@ export function TVViewer() {
       }));
     }
     console.log('Imagem carregada:', newDimensions);
+    console.log('Dimensões originais armazenadas:', newDimensions);
     
     // Calcular range máximo
     const railWidth = Math.max(0, img.naturalWidth - 1080);
@@ -1719,14 +1727,26 @@ export function TVViewer() {
               </p>
             </div>
 
-            {/* Botões de Reset */}
-            <div className="flex gap-2">
-              <button
-                onClick={() => handleCalibrationChange({ imageWidth: 20000, imageHeight: 4000 })}
-                className="px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
-              >
-                Reset Padrão
-              </button>
+          {/* Botões de Reset */}
+          <div className="flex gap-2">
+            <button
+              onClick={() => {
+                if (originalImageDimensions) {
+                  handleCalibrationChange({ 
+                    imageWidth: originalImageDimensions.width, 
+                    imageHeight: originalImageDimensions.height 
+                  });
+                  console.log('Reset para dimensões originais:', originalImageDimensions);
+                } else {
+                  handleCalibrationChange({ imageWidth: 20000, imageHeight: 4000 });
+                  console.log('Reset para valores padrão (imagem não carregada)');
+                }
+              }}
+              className="px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
+              disabled={!originalImageDimensions}
+            >
+              Reset Padrão {originalImageDimensions ? `(${originalImageDimensions.width}x${originalImageDimensions.height})` : '(Imagem não carregada)'}
+            </button>
               <button
                 onClick={() => handleCalibrationChange({ imageWidth: 30000, imageHeight: 6000 })}
                 className="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700"
