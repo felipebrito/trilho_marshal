@@ -4,6 +4,8 @@ Uma aplicação interativa que simula um trilho com uma TV sobre uma parede, per
 
 ## ✨ Novidades da Versão Atual
 
+- **Fechamento automático de modal** com detecção de movimento UDP em tempo real
+- **Animações GSAP suaves** para entrada e saída do modal (fade in/out)
 - **Controle UDP em tempo real** com WebSocket para máxima responsividade
 - **Sistema de bullets configuráveis** com posições, tamanhos e cores personalizáveis
 - **Animações sequenciais** melhoradas com transições suaves
@@ -13,7 +15,7 @@ Uma aplicação interativa que simula um trilho com uma TV sobre uma parede, per
 - **Modal customizado** com blur funcional ao redor
 - **Tratamento de erros** robusto para carregamento de imagens
 - **Fundo personalizado** (#fff1ef) para melhor contraste
-- **Performance otimizada** com CSS transitions
+- **Performance otimizada** com CSS transitions e GSAP
 
 ## 🚀 Instalação e Execução
 
@@ -116,6 +118,7 @@ O servidor estará disponível em:
 - Bullets pulsantes clicáveis
 - Animações sequenciais de imagens
 - Controle via UDP (valores 0-1)
+- **Fechamento automático de modal** quando detecta movimento
 - Controle de teclado para bullets
 - Background travável
 
@@ -172,6 +175,7 @@ trilho-marshal/
 - **Formato**: Valores de 0 a 1 (0 = esquerda, 1 = direita)
 - **Modo**: Funciona apenas em modo operação
 - **Ativação**: Tecla 'U' para ativar/desativar
+- **Fechamento automático**: Modal fecha automaticamente quando detecta movimento
 - **Teste**: Use `python test-udp.py` para testar
 
 ### Sistema de Bullets
@@ -326,9 +330,12 @@ npm run help             # Mostrar ajuda
 - **Tratamento de erros** robusto para carregamento de imagens
 
 ### Animações Melhoradas
-- **CSS transitions** em vez de GSAP para melhor performance
+- **Animações GSAP** para modal com fade in/out suaves (0.3s)
+- **Fechamento automático** com animação quando detecta movimento UDP
+- **CSS transitions** para outros elementos para melhor performance
 - **Fade e blur** suaves com transições configuráveis
 - **Estados visuais** claros para cada etapa da animação
+- **Transições profissionais** com easing power2.out
 
 ## 📄 Licença
 
