@@ -90,22 +90,3 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// WebSocket para comunicação em tempo real
-export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
-  const ws = searchParams.get('ws');
-  
-  if (ws === 'true') {
-    // Retornar endpoint WebSocket
-    return NextResponse.json({ 
-      websocket: '/api/udp-control/ws',
-      instructions: 'Connect to WebSocket to receive UDP position updates'
-    });
-  }
-  
-  return NextResponse.json({ 
-    status: 'UDP Server running on port 8888',
-    clients: clients.size,
-    server: udpServer ? 'active' : 'inactive'
-  });
-}
