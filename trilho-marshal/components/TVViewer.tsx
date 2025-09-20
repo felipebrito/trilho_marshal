@@ -1729,21 +1729,34 @@ export function TVViewer() {
           <div className="flex gap-2">
             <button
               onClick={() => {
-                if (originalImageDimensions) {
-                  handleCalibrationChange({ 
-                    imageWidth: originalImageDimensions.width, 
-                    imageHeight: originalImageDimensions.height 
-                  });
-                  console.log('Reset para dimensões originais:', originalImageDimensions);
+                // Forçar detecção das dimensões da imagem
+                if (imgRef.current) {
+                  const img = imgRef.current;
+                  const naturalWidth = img.naturalWidth;
+                  const naturalHeight = img.naturalHeight;
+                  
+                  if (naturalWidth > 0 && naturalHeight > 0) {
+                    const dimensions = { width: naturalWidth, height: naturalHeight };
+                    setOriginalImageDimensions(dimensions);
+                    handleCalibrationChange({ 
+                      imageWidth: naturalWidth, 
+                      imageHeight: naturalHeight 
+                    });
+                    console.log('Reset para dimensões detectadas:', dimensions);
+                  } else {
+                    // Fallback para valores padrão
+                    handleCalibrationChange({ imageWidth: 20000, imageHeight: 4000 });
+                    console.log('Reset para valores padrão (dimensões não detectadas)');
+                  }
                 } else {
+                  // Fallback para valores padrão
                   handleCalibrationChange({ imageWidth: 20000, imageHeight: 4000 });
-                  console.log('Reset para valores padrão (imagem não carregada)');
+                  console.log('Reset para valores padrão (imagem não encontrada)');
                 }
               }}
               className="px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
-              disabled={!originalImageDimensions}
             >
-              Reset Padrão {originalImageDimensions ? `(${originalImageDimensions.width}x${originalImageDimensions.height})` : '(Imagem não carregada)'}
+              Reset Padrão {originalImageDimensions ? `(${originalImageDimensions.width}x${originalImageDimensions.height})` : '(Detectar dimensões)'}
             </button>
               <button
                 onClick={() => handleCalibrationChange({ imageWidth: 30000, imageHeight: 6000 })}
@@ -1756,6 +1769,23 @@ export function TVViewer() {
                 className="px-3 py-1 bg-yellow-600 text-white text-xs rounded hover:bg-yellow-700"
               >
                 Pequena
+              </button>
+              <button
+                onClick={() => {
+                  // Reset simples e direto
+                  handleCalibrationChange({ 
+                    imageWidth: 20000, 
+                    imageHeight: 4000,
+                    scale: 1.0,
+                    offsetX: 0,
+                    offsetY: 0,
+                    position: 0
+                  });
+                  console.log('Reset completo aplicado');
+                }}
+                className="px-3 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700"
+              >
+                Reset Completo
               </button>
             </div>
           </div>
