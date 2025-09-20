@@ -3,10 +3,9 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { gsap } from 'gsap';
 import { Draggable } from 'gsap/Draggable';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { useUDPControl } from '@/hooks/useUDPControl';
-import FadeContent from './FadeContent';
+import BulletAnimation from './BulletAnimation';
 
 // Registrar o plugin Draggable
 gsap.registerPlugin(Draggable);
@@ -199,7 +198,29 @@ export function TVViewer() {
   const [selectedBullet, setSelectedBullet] = useState<Bullet | null>(null);
   const [isBackgroundLocked, setIsBackgroundLocked] = useState(false);
   const [isUDPActive, setIsUDPActive] = useState(false);
+  
+  // Estado para controle de cliques e movimento
+  const lastClickTime = useRef<number>(0);
+  const lastPosition = useRef<number>(calibration.position);
+  const movementTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Estados para controle de movimento e fechamento automático de modais
   const [selectedBulletForControl, setSelectedBulletForControl] = useState<Bullet | null>(null);
+
+  // Função simples para detectar movimento e fechar modal
+  const checkMovementAndCloseModal = (newPosition: number) => {
+    const positionDiff = Math.abs(newPosition - lastPosition.current);
+    const movementThreshold = 1.0; // Threshold baixo para detectar qualquer movimento
+    
+    if (positionDiff > movementThreshold && isModalOpen) {
+      console.log(`🚀 Movimento detectado: ${lastPosition.current} → ${newPosition} (diff: ${positionDiff}) - Fechando modal`);
+      setIsModalOpen(false);
+      setSelectedBullet(null);
+    }
+    
+    lastPosition.current = newPosition;
+  };
+  
 
   // Função para carregar imagens de uma pasta específica
   const loadImagesFromFolder = (folder: string): string[] => {
@@ -256,6 +277,9 @@ export function TVViewer() {
       bullets,
       isBackgroundLocked,
       isUDPActive,
+      mode, // Salvar modo atual
+      selectedBulletForControl, // Salvar bullet selecionado para controle
+      originalImageDimensions, // Salvar dimensões originais da imagem
       timestamp: new Date().toISOString()
     };
     localStorage.setItem('trilho-marshal-config', JSON.stringify(config));
@@ -263,6 +287,13 @@ export function TVViewer() {
     console.log('📐 Dimensões da imagem sendo salvas:', {
       imageWidth: calibration.imageWidth,
       imageHeight: calibration.imageHeight
+    });
+    console.log('🎯 Estado completo salvo:', {
+      mode,
+      isBackgroundLocked,
+      isUDPActive,
+      bulletsCount: bullets.length,
+      selectedBullet: selectedBulletForControl?.id,
     });
     alert('✅ Configurações salvas com sucesso!');
   };
@@ -383,6 +414,8 @@ export function TVViewer() {
 
   // Estado para suavização UDP (removido - usando atualização direta)
 
+
+
   // Callback para mudança de posição via UDP
   const handleUDPPositionChange = useCallback((position: number) => {
     console.log('UDP: Recebido valor:', position, 'Modo atual:', mode);
@@ -405,12 +438,16 @@ export function TVViewer() {
       posicaoAtual: calibration.position
     });
     
+    
     // Atualizar posição diretamente (sem suavização para máxima responsividade)
     setCalibration(prev => ({
       ...prev,
       position: newPosition
     }));
-  }, [getMaxPosition, mode, calibration.position]);
+    
+    // Verificar movimento e fechar modal se necessário
+    checkMovementAndCloseModal(newPosition);
+  }, [getMaxPosition, mode, calibration.position, isModalOpen]);
 
   // Animação UDP removida - usando atualização direta para máxima responsividade
 
@@ -565,11 +602,26 @@ export function TVViewer() {
   };
 
   // Atualizar quando necessário
+  const prevCalibration = useRef(calibration);
+  const prevMode = useRef(mode);
+  const prevFramesLength = useRef(frames.length);
+
   useEffect(() => {
-    console.log('🔄 useEffect executado - atualizando transformações');
-    console.log('🔄 Dependências:', { calibration, mode, framesCount: frames.length });
-    updateTransform();
-    updateFramesVisibility();
+    const calibrationChanged = JSON.stringify(prevCalibration.current) !== JSON.stringify(calibration);
+    const modeChanged = prevMode.current !== mode;
+    const framesChanged = prevFramesLength.current !== frames.length;
+
+    if (calibrationChanged || modeChanged || framesChanged) {
+      console.log('🔄 useEffect executado - atualizando transformações');
+      console.log('🔄 Dependências:', { calibration, mode, framesCount: frames.length });
+      updateTransform();
+      updateFramesVisibility();
+      
+      // Atualizar refs
+      prevCalibration.current = calibration;
+      prevMode.current = mode;
+      prevFramesLength.current = frames.length;
+    }
   }, [calibration, mode, frames]);
 
   // Removido salvamento automático para evitar conflitos
@@ -659,6 +711,26 @@ export function TVViewer() {
           console.log('✅ Estado UDP carregado:', config.isUDPActive);
         }
         
+        // Carregar modo atual
+        if (config.mode) {
+          setMode(config.mode);
+          console.log('✅ Modo carregado:', config.mode);
+        }
+        
+        // Carregar bullet selecionado para controle
+        if (config.selectedBulletForControl) {
+          setSelectedBulletForControl(config.selectedBulletForControl);
+          console.log('✅ Bullet selecionado carregado:', config.selectedBulletForControl.id);
+        }
+        
+        // Carregar última posição para detecção de movimento
+        
+        // Carregar dimensões originais da imagem
+        if (config.originalImageDimensions) {
+          setOriginalImageDimensions(config.originalImageDimensions);
+          console.log('✅ Dimensões originais carregadas:', config.originalImageDimensions);
+        }
+        
         console.log('🎉 Todas as configurações carregadas com sucesso!');
       } catch (error) {
         console.error('❌ Erro ao carregar configurações:', error);
@@ -718,9 +790,26 @@ export function TVViewer() {
 
   // Função para clicar em um bullet
   const handleBulletClick = (bullet: Bullet) => {
+    const now = Date.now();
+    const timeSinceLastClick = now - lastClickTime.current;
+    
+    // Debounce: evitar cliques muito rápidos (menos de 300ms)
+    if (timeSinceLastClick < 300) {
+      console.log('🚫 Clique muito rápido - ignorando');
+      return;
+    }
+    
+    lastClickTime.current = now;
+    const timestamp = new Date().toISOString();
+    console.log(`🎯 BULLET CLICK DEBUG [${timestamp}]:`, {
+      bulletId: bullet.id,
+      bulletLabel: bullet.label,
+      isBackgroundLocked,
+      isModalOpen,
+    });
+    
     // Se o background estiver travado, selecionar bullet para controle por teclas
     if (isBackgroundLocked) {
-      const timestamp = new Date().toISOString();
       console.log(`🎯 BULLET SELECIONADO [${timestamp}]:`, {
         bulletId: bullet.id,
         bulletLabel: bullet.label,
@@ -733,7 +822,23 @@ export function TVViewer() {
       return;
     }
     
-    console.log('Bullet clicado:', bullet);
+    // Se o modal já estiver aberto para o mesmo bullet, fechar
+    if (isModalOpen && selectedBullet?.id === bullet.id) {
+      console.log('🚪 Fechando modal - mesmo bullet clicado');
+      setIsModalOpen(false);
+      setSelectedBullet(null);
+      return;
+    }
+    
+    // Se o modal estiver aberto para outro bullet, trocar
+    if (isModalOpen && selectedBullet?.id !== bullet.id) {
+      console.log('🔄 Trocando modal para bullet:', bullet.id);
+      setSelectedBullet(bullet);
+      return;
+    }
+    
+    // Abrir modal para novo bullet
+    console.log('✅ Abrindo modal para bullet:', bullet.id);
     setSelectedBullet(bullet);
     setIsModalOpen(true);
   };
@@ -905,6 +1010,7 @@ export function TVViewer() {
               {/* Botão de fechar */}
               <button
                 onClick={() => {
+                  console.log('🚪 FECHANDO MODAL MANUALMENTE (botão X)');
                   setIsModalOpen(false);
                   setSelectedBullet(null);
                 }}
@@ -930,183 +1036,11 @@ export function TVViewer() {
           );
         };
 
-        // Componente de animação sequencial para Bullets
-        const BulletAnimation = ({ bullet }: { bullet: Bullet }) => {
-          const [currentStep, setCurrentStep] = useState(0);
-          const [imagesLoaded, setImagesLoaded] = useState(false);
-          const animationRef = useRef<HTMLDivElement>(null);
-
-          const images = loadImagesFromFolder(bullet.folder);
-          console.log('🎬 BulletAnimation: Carregando imagens para', bullet.folder, ':', images);
-
-          useEffect(() => {
-            if (!animationRef.current) return;
-
-            console.log('🎬 BulletAnimation: Iniciando animação para', bullet.id);
-
-            // Animação de entrada do modal
-            gsap.fromTo(animationRef.current, 
-              { opacity: 0, scale: 0.8 },
-              { 
-                opacity: 1, 
-                scale: 1, 
-                duration: 0.3, 
-                ease: "power2.out" 
-              }
-            );
-
-            // Sequência de steps para indicadores
-            const stepTimeline = gsap.timeline({ delay: 0.3 });
-            stepTimeline.call(() => {
-              console.log('🎬 Step 1 ativado');
-              setCurrentStep(1);
-            }, [], 0.2);
-            stepTimeline.call(() => {
-              console.log('🎬 Step 2 ativado');
-              setCurrentStep(2);
-            }, [], 0.4);
-            stepTimeline.call(() => {
-              console.log('🎬 Step 3 ativado');
-              setCurrentStep(3);
-            }, [], 0.6);
-            
-            if (images[3]) {
-              stepTimeline.call(() => {
-                console.log('🎬 Step 4 ativado (imagem adicional)');
-                setCurrentStep(4);
-              }, [], 0.8);
-            }
-
-          }, [bullet.id]);
-
-          return (
-            <div ref={animationRef} className="relative w-full h-full flex items-center justify-center" style={{ backgroundColor: '#fff1ef' }}>
-              {/* Efeito de blur ao redor da imagem */}
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent blur-sm"></div>
-              </div>
-              
-              {/* Imagem de fundo - visível imediatamente */}
-              <img
-                src={images[0]}
-                alt="Background"
-                className="absolute inset-0 w-full h-full object-contain z-10"
-                onLoad={() => console.log('✅ Imagem de fundo carregada:', images[0])}
-                onError={(e) => {
-                  console.log('❌ Erro ao carregar imagem de fundo:', images[0]);
-                  e.currentTarget.style.display = 'none';
-                }}
-              />
-              
-              {/* Imagem do ano com animação CSS */}
-              <div 
-                className="absolute inset-0 w-full h-full z-20"
-                style={{
-                  opacity: currentStep >= 1 ? 1 : 0,
-                  filter: currentStep >= 1 ? 'blur(0px)' : 'blur(20px)',
-                  transform: currentStep >= 1 ? 'scale(1)' : 'scale(1.05)',
-                  transition: 'opacity 0.4s ease-out, filter 0.4s ease-out, transform 0.4s ease-out'
-                }}
-              >
-                <img
-                  src={images[1]}
-                  alt="Ano"
-                  className="w-full h-full object-contain"
-                  onLoad={() => console.log('✅ Imagem do ano carregada:', images[1])}
-                  onError={(e) => {
-                    console.log('❌ Erro ao carregar imagem do ano:', images[1]);
-                    e.currentTarget.style.display = 'none';
-                  }}
-                />
-              </div>
-              
-              {/* Imagem do texto com animação CSS */}
-              <div 
-                className="absolute inset-0 w-full h-full z-30"
-                style={{
-                  opacity: currentStep >= 2 ? 1 : 0,
-                  filter: currentStep >= 2 ? 'blur(0px)' : 'blur(20px)',
-                  transform: currentStep >= 2 ? 'scale(1)' : 'scale(1.05)',
-                  transition: 'opacity 0.4s ease-out, filter 0.4s ease-out, transform 0.4s ease-out'
-                }}
-              >
-                <img
-                  src={images[2]}
-                  alt="Texto descritivo"
-                  className="w-full h-full object-contain"
-                  onLoad={() => console.log('✅ Imagem do texto carregada:', images[2])}
-                  onError={(e) => {
-                    console.log('❌ Erro ao carregar imagem do texto:', images[2]);
-                    e.currentTarget.style.display = 'none';
-                  }}
-                />
-              </div>
-
-              {/* Imagem adicional (se existir) com animação CSS */}
-              {images[3] && (
-                <div 
-                  className="absolute inset-0 w-full h-full z-40"
-                  style={{
-                    opacity: currentStep >= 3 ? 1 : 0,
-                    filter: currentStep >= 3 ? 'blur(0px)' : 'blur(20px)',
-                    transform: currentStep >= 3 ? 'scale(1)' : 'scale(1.05)',
-                    transition: 'opacity 0.4s ease-out, filter 0.4s ease-out, transform 0.4s ease-out'
-                  }}
-                >
-                  <img
-                    src={images[3]}
-                    alt="Imagem adicional"
-                    className="w-full h-full object-contain"
-                    onLoad={() => console.log('✅ Imagem adicional carregada:', images[3])}
-                    onError={(e) => {
-                      console.log('❌ Erro ao carregar imagem opcional:', images[3]);
-                      e.currentTarget.style.display = 'none';
-                    }}
-                  />
-                </div>
-              )}
-
-              {/* Indicadores de progresso */}
-              <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-3">
-                {images.slice(0, 3).map((_, index) => (
-                  <div
-                    key={index}
-                    className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                      index < currentStep ? 'bg-white' : 'bg-white/30'
-                    }`}
-                  />
-                ))}
-                {images[3] && (
-                  <div
-                    className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                      currentStep >= 4 ? 'bg-white' : 'bg-white/30'
-                    }`}
-                  />
-                )}
-              </div>
-
-              {/* Debug info */}
-              <div className="absolute top-4 left-4 bg-black/50 text-white p-2 rounded text-xs z-50">
-                <div>Step: {currentStep}</div>
-                <div>Images: {images.length}</div>
-                <div>Folder: {bullet.folder}</div>
-              </div>
-            </div>
-          );
-        };
+  // Componente de animação sequencial para Bullets (memoizado)
 
   // Componente do carrossel modal
   const ImageCarousel = () => {
     if (!selectedZone) return null;
-
-    useEffect(() => {
-      if (carouselRef.current) {
-        gsap.fromTo(carouselRef.current, 
-          { opacity: 0, scale: 0.8 },
-          { opacity: 1, scale: 1, duration: 0.3, ease: "power2.out" }
-        );
-      }
-    }, [selectedZone]);
 
     return (
       <div ref={carouselRef} className="relative w-full h-full flex items-center justify-center">
@@ -1438,14 +1372,18 @@ export function TVViewer() {
         const direction = e.key.toLowerCase() === 'o' ? -1 : 1; // O = esquerda, P = direita
         const newPosition = Math.max(0, Math.min(maxPos, calibration.position + (step * direction)));
         
+        
         setCalibration(prev => ({ ...prev, position: newPosition }));
         console.log('TECLADO:', { key: e.key, step, maxPos, oldPos: calibration.position, newPosition });
+        
+        // Verificar movimento e fechar modal se necessário
+        checkMovementAndCloseModal(newPosition);
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [calibration.position, getMaxPosition, isBackgroundLocked, selectedBulletForControl]);
+  }, [calibration.position, getMaxPosition, isBackgroundLocked, selectedBulletForControl, checkMovementAndCloseModal]);
 
 
   // Evento wheel global - mais confiável
@@ -1482,7 +1420,11 @@ export function TVViewer() {
       const oldPosition = calibration.position;
       const newPosition = Math.max(0, Math.min(maxPos, oldPosition + e.deltaY * sensitivity));
       
+      
       setCalibration(prev => ({ ...prev, position: newPosition }));
+      
+      // Verificar movimento e fechar modal se necessário
+      checkMovementAndCloseModal(newPosition);
       
       console.log('🚀 WHEEL APLICADO:', { 
         deltaY: e.deltaY, 
@@ -1496,7 +1438,8 @@ export function TVViewer() {
     
     window.addEventListener('wheel', handleGlobalWheel, { passive: false });
     return () => window.removeEventListener('wheel', handleGlobalWheel);
-  }, [calibration.position, mode, getMaxPosition, isBackgroundLocked]);
+  }, [calibration.position, mode, getMaxPosition, isBackgroundLocked, checkMovementAndCloseModal]);
+
 
   return (
     <>
@@ -1834,6 +1777,24 @@ export function TVViewer() {
               />
               Mostrar Grid
             </label>
+          </div>
+
+          {/* Status de Movimento */}
+          <div className="mb-4 p-3 bg-gray-800 rounded-lg">
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-sm font-medium text-white">
+                🚀 Status de Movimento
+              </label>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-gray-500"></div>
+                <span className="text-xs text-gray-400">
+                  Sistema Ativo
+                </span>
+              </div>
+            </div>
+            <div className="text-xs text-gray-400">
+              ✅ Modais podem ser abertos
+            </div>
           </div>
 
           {/* Configurações de Animação */}
@@ -2217,18 +2178,20 @@ export function TVViewer() {
             <p>💡 <strong>Teclas:</strong> C = Alternar modos | R = Reset | O/P = Navegar | T = Travar | U = UDP | S = Salvar</p>
             <p>💡 <strong>Navegação:</strong> O/P = Movimento horizontal | Scroll trackpad = navegação horizontal</p>
             <p>💡 <strong>UDP:</strong> Envie valores 0-1 para porta 8888 (só em modo operação)</p>
-            <p>💡 <strong>Persistência:</strong> Clique em "Salvar Posições" para salvar | "Limpar Tudo" para resetar</p>
+            <p>💡 <strong>Persistência:</strong> Clique em &quot;Salvar Posições&quot; para salvar | &quot;Limpar Tudo&quot; para resetar</p>
+            
           </div>
         </div>
       )}
 
         {/* Modal do Carrossel / Frame A Animation */}
-        {isModalOpen && (
+        {isModalOpen && selectedBullet && (
           <div className="fixed inset-0 z-50 flex items-center justify-center">
             {/* Overlay com blur */}
             <div 
               className="absolute inset-0 bg-black/30 backdrop-blur-lg"
               onClick={() => {
+                console.log('🚪 FECHANDO MODAL MANUALMENTE (overlay)');
                 setIsModalOpen(false);
                 setSelectedBullet(null);
               }}
@@ -2239,6 +2202,7 @@ export function TVViewer() {
               {/* Botão de fechar */}
               <button
                 onClick={() => {
+                  console.log('🚪 FECHANDO MODAL MANUALMENTE (botão X principal)');
                   setIsModalOpen(false);
                   setSelectedBullet(null);
                 }}
@@ -2250,22 +2214,11 @@ export function TVViewer() {
               
               {/* Conteúdo */}
               <div className="w-full h-full">
-                {selectedBullet ? (
-                  <>
-                    {console.log('Renderizando BulletAnimation para bullet:', selectedBullet.id)}
-                    <BulletAnimation bullet={selectedBullet} />
-                  </>
-                ) : selectedZone ? (
-                  <>
-                    {console.log('Renderizando ImageCarousel para zone:', selectedZone.id)}
-                    <ImageCarousel />
-                  </>
-                ) : (
-                  <>
-                    {console.log('Renderizando FrameAAnimation')}
-                    <FrameAAnimation />
-                  </>
-                )}
+                <BulletAnimation 
+                  key={`${selectedBullet.id}-${isModalOpen}`} 
+                  bullet={selectedBullet} 
+                  loadImagesFromFolder={loadImagesFromFolder} 
+                />
               </div>
             </div>
           </div>
