@@ -32,6 +32,26 @@ export function useUDPControl({ onPositionChange, enabled = true }: UDPControlOp
         }
       };
 
+      ws.onerror = (error) => {
+        console.error('UDP Control: ❌ Erro no WebSocket:', error);
+        setIsConnected(false);
+      };
+
+      ws.onclose = (event) => {
+        console.log('UDP Control: 🔌 WebSocket desconectado:', event.code, event.reason);
+        setIsConnected(false);
+        
+        // Tentar reconectar se ainda estiver habilitado
+        if (enabledRef.current) {
+          console.log('UDP Control: 🔄 Tentando reconectar em 2s...');
+          reconnectTimeoutRef.current = setTimeout(() => {
+            if (enabledRef.current) {
+              connectWebSocket();
+            }
+          }, 2000);
+        }
+      };
+
       ws.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);

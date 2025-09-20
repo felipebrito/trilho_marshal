@@ -1483,9 +1483,7 @@ export function TVViewer() {
             className="absolute top-0 left-0 w-auto h-auto max-w-none max-h-none"
             onLoad={handleImageLoad}
             style={{ 
-              imageRendering: 'auto',
-              width: `${calibration.imageWidth}px`,
-              height: `${calibration.imageHeight}px`
+              imageRendering: 'auto'
             }}
           />
           
