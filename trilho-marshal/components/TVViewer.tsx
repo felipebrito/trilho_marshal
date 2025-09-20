@@ -373,6 +373,8 @@ export function TVViewer() {
     return Math.max(50, result);
   }, [imageDimensions.width, calibration.scale]);
 
+  // Estado para suavização UDP (removido - usando atualização direta)
+
   // Callback para mudança de posição via UDP
   const handleUDPPositionChange = useCallback((position: number) => {
     console.log('UDP: Recebido valor:', position, 'Modo atual:', mode);
@@ -386,15 +388,47 @@ export function TVViewer() {
     const percentage = position * 100;
     const maxPos = getMaxPosition();
     const newPosition = Math.max(0, Math.min(maxPos, percentage));
-    setCalibration(prev => ({ ...prev, position: newPosition }));
-    console.log('UDP: Posição atualizada para', newPosition + '%');
-  }, [getMaxPosition, mode]);
+    
+    console.log('UDP: Conversão:', {
+      valorOriginal: position,
+      percentage: percentage,
+      maxPos: maxPos,
+      newPosition: newPosition,
+      posicaoAtual: calibration.position
+    });
+    
+    // Atualizar posição diretamente (sem suavização para máxima responsividade)
+    setCalibration(prev => ({
+      ...prev,
+      position: newPosition
+    }));
+  }, [getMaxPosition, mode, calibration.position]);
+
+  // Animação UDP removida - usando atualização direta para máxima responsividade
 
   // Hook UDP Control - só funciona em modo operação
   const { isConnected } = useUDPControl({
     onPositionChange: handleUDPPositionChange,
     enabled: isUDPActive && mode === 'operation'
   });
+
+  // Debug do estado UDP
+  useEffect(() => {
+    const enabled = isUDPActive && mode === 'operation';
+    console.log('UDP Debug:', {
+      isUDPActive,
+      mode,
+      enabled,
+      isConnected,
+      timestamp: new Date().toISOString()
+    });
+  }, [isUDPActive, mode, isConnected]);
+
+  // Debug específico para mudanças no enabled
+  useEffect(() => {
+    const enabled = isUDPActive && mode === 'operation';
+    console.log('🔍 UDP Enabled mudou:', enabled, 'isUDPActive:', isUDPActive, 'mode:', mode);
+  }, [isUDPActive, mode]);
 
   // Atualizar estado de conexão UDP - REMOVIDO: usando isUDPActive agora
 
@@ -1194,7 +1228,7 @@ export function TVViewer() {
             // Toggle UDP ativo/inativo
             setIsUDPActive(prev => {
               const newState = !prev;
-              console.log(`📡 UDP ${newState ? 'ativado' : 'desativado'}`);
+              console.log(`📡 UDP ${newState ? 'ativado' : 'desativado'} (anterior: ${prev})`);
               return newState;
             });
           }

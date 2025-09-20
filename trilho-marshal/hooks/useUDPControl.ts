@@ -7,71 +7,120 @@ interface UDPControlOptions {
 
 export function useUDPControl({ onPositionChange, enabled = true }: UDPControlOptions) {
   const [isConnected, setIsConnected] = useState(false);
-  const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const wsRef = useRef<WebSocket | null>(null);
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastPositionRef = useRef<number | null>(null);
+  const enabledRef = useRef<boolean>(enabled);
 
-  const checkUDPStatus = async () => {
+  const connectWebSocket = () => {
     if (!enabled) return;
+    if (wsRef.current?.readyState === WebSocket.OPEN) return;
 
     try {
-      const response = await fetch('/api/udp-control');
-      const data = await response.json();
-      
-      if (data.server === 'active') {
+      console.log('UDP Control: Conectando WebSocket...');
+      const ws = new WebSocket('ws://localhost:8081');
+      wsRef.current = ws;
+
+      ws.onopen = () => {
+        console.log('UDP Control: ✅ WebSocket conectado');
         setIsConnected(true);
-        console.log('UDP Control: Servidor UDP ativo');
-      } else {
+        
+        // Limpar timeout de reconexão se existir
+        if (reconnectTimeoutRef.current) {
+          clearTimeout(reconnectTimeoutRef.current);
+          reconnectTimeoutRef.current = null;
+        }
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.type === 'position' && data.value !== undefined) {
+            if (data.value !== lastPositionRef.current) {
+              lastPositionRef.current = data.value;
+              console.log('UDP Control: 📡 Dados recebidos:', data.value);
+              onPositionChange(data.value);
+            }
+          }
+        } catch (error) {
+          console.error('UDP Control: Erro ao processar mensagem:', error);
+        }
+      };
+
+      ws.onclose = (event) => {
+        console.log('UDP Control: ❌ WebSocket desconectado:', event.code, event.reason);
         setIsConnected(false);
-        console.log('UDP Control: Servidor UDP inativo');
-      }
+        
+        // Tentar reconectar em 2 segundos se ainda estiver habilitado
+        if (enabled) {
+          reconnectTimeoutRef.current = setTimeout(() => {
+            console.log('UDP Control: 🔄 Tentando reconectar...');
+            connectWebSocket();
+          }, 2000);
+        }
+      };
+
+      ws.onerror = (error) => {
+        console.error('UDP Control: ❌ Erro WebSocket:', error);
+        setIsConnected(false);
+      };
     } catch (error) {
+      console.error('UDP Control: ❌ Erro ao conectar WebSocket:', error);
       setIsConnected(false);
-      console.error('UDP Control: Erro ao verificar status:', error);
     }
   };
 
-  const startPolling = () => {
-    if (!enabled) return;
-
-    // Verificar status inicial
-    checkUDPStatus();
-
-    // Polling a cada 2 segundos para simular recebimento de dados
-    pollIntervalRef.current = setInterval(async () => {
-      try {
-        // Simular recebimento de dados UDP
-        // Em uma implementação real, isso viria do servidor UDP
-        const mockPosition = Math.random(); // Simular posição aleatória para teste
-        onPositionChange(mockPosition);
-        console.log('UDP Control: Posição simulada recebida:', mockPosition);
-      } catch (error) {
-        console.error('UDP Control: Erro no polling:', error);
-      }
-    }, 2000);
-  };
-
-  const stopPolling = () => {
-    if (pollIntervalRef.current) {
-      clearInterval(pollIntervalRef.current);
-      pollIntervalRef.current = null;
+  const disconnect = () => {
+    console.log('UDP Control: 🔌 Desconectando...');
+    
+    // Limpar timeout de reconexão
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current);
+      reconnectTimeoutRef.current = null;
+      console.log('UDP Control: Timeout de reconexão limpo');
     }
+    
+    // Fechar WebSocket
+    if (wsRef.current) {
+      console.log('UDP Control: Fechando WebSocket...');
+      wsRef.current.close();
+      wsRef.current = null;
+    }
+    
+    // Limpar última posição
+    lastPositionRef.current = null;
+    
+    // Atualizar estado
     setIsConnected(false);
+    console.log('UDP Control: ✅ Desconectado completamente');
   };
 
   useEffect(() => {
-    if (enabled) {
-      startPolling();
+    console.log('UDP Control: useEffect executado, enabled:', enabled, 'enabledRef:', enabledRef.current, 'timestamp:', new Date().toISOString());
+    
+    // Só reconectar se o estado realmente mudou
+    if (enabled !== enabledRef.current) {
+      enabledRef.current = enabled;
+      
+      if (enabled) {
+        console.log('UDP Control: Conectando WebSocket...');
+        connectWebSocket();
+      } else {
+        console.log('UDP Control: Desconectando WebSocket...');
+        disconnect();
+      }
     } else {
-      stopPolling();
+      console.log('UDP Control: Estado não mudou, ignorando...');
     }
 
     return () => {
-      stopPolling();
+      console.log('UDP Control: Cleanup - desconectando...');
+      disconnect();
     };
   }, [enabled]);
 
   return {
     isConnected,
-    disconnect: stopPolling
+    disconnect
   };
 }

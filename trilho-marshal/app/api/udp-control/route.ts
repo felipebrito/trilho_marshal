@@ -4,6 +4,7 @@ import dgram from 'dgram';
 // Servidor UDP global para reutilização
 let udpServer: dgram.Socket | null = null;
 let clients: Set<WebSocket> = new Set();
+let lastPosition: number | null = null;
 
 // Função para enviar dados para todos os clientes WebSocket conectados
 function broadcastToClients(data: any) {
@@ -23,16 +24,24 @@ function initUDPServer() {
 
   udpServer.on('message', (msg, rinfo) => {
     try {
-      const data = msg.toString();
-      const position = parseFloat(data);
+      const data = msg.toString().trim(); // Remove espaços e quebras de linha
+      
+      // Extrair número da string (pode vir como "value 0.468" ou apenas "0.468")
+      const numberMatch = data.match(/(\d+\.?\d*)/);
+      const position = numberMatch ? parseFloat(numberMatch[1]) : parseFloat(data);
+      
+      console.log('UDP: Debug - dados brutos:', JSON.stringify(data), '| número extraído:', position, '| isNaN:', isNaN(position), '| < 0:', position < 0, '| > 1:', position > 1);
       
       // Validar se está entre 0 e 1
       if (isNaN(position) || position < 0 || position > 1) {
-        console.log('UDP: Posição inválida recebida:', data);
+        console.log('UDP: ❌ Posição inválida recebida:', JSON.stringify(data), '(deve ser entre 0 e 1)');
         return;
       }
 
-      console.log('UDP: Posição recebida:', position, 'de', rinfo.address);
+      console.log('UDP: ✅ Posição válida recebida:', position, 'de', rinfo.address);
+      
+      // Salvar última posição
+      lastPosition = position;
       
       // Enviar para clientes WebSocket
       broadcastToClients({
@@ -65,7 +74,8 @@ export async function GET() {
   return NextResponse.json({ 
     status: 'UDP Server running on port 8888',
     clients: clients.size,
-    server: udpServer ? 'active' : 'inactive'
+    server: udpServer ? 'active' : 'inactive',
+    lastPosition: lastPosition
   });
 }
 
@@ -76,6 +86,9 @@ export async function POST(request: NextRequest) {
     if (typeof position !== 'number' || position < 0 || position > 1) {
       return NextResponse.json({ error: 'Position must be between 0 and 1' }, { status: 400 });
     }
+
+    // Salvar última posição
+    lastPosition = position;
 
     // Enviar para clientes WebSocket
     broadcastToClients({
