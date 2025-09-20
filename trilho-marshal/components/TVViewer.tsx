@@ -452,22 +452,36 @@ export function TVViewer() {
 
   // Aplicar transformações (exatamente como no HTML original)
   const updateTransform = useCallback(() => {
-    if (!worldRef.current) return;
+    if (!worldRef.current) {
+      console.log('❌ updateTransform: worldRef.current não existe');
+      return;
+    }
 
     const cameraX = getCameraX();
     const translateX = (-cameraX + calibration.offsetX) * calibration.scale;
     const translateY = calibration.offsetY * calibration.scale;
 
-    console.log('updateTransform:', {
+    console.log('🔄 updateTransform:', {
       cameraX,
       translateX,
       translateY,
       scale: calibration.scale,
-      imageWidth: calibration.imageWidth
+      imageWidth: calibration.imageWidth,
+      imageHeight: calibration.imageHeight,
+      offsetX: calibration.offsetX,
+      offsetY: calibration.offsetY,
+      position: calibration.position
     });
 
+    const transformString = `translate(${translateX}px, ${translateY}px) scale(${calibration.scale})`;
+    console.log('🎨 Aplicando transformação:', transformString);
+    
     // Aplicar transformação sem limitações artificiais
-    worldRef.current.style.transform = `translate(${translateX}px, ${translateY}px) scale(${calibration.scale})`;
+    worldRef.current.style.transform = transformString;
+    
+    // Verificar se foi aplicada
+    const appliedTransform = worldRef.current.style.transform;
+    console.log('✅ Transformação aplicada:', appliedTransform);
   }, [calibration, getCameraX]);
 
   // Atualizar visibilidade dos frames e target zones
@@ -537,6 +551,8 @@ export function TVViewer() {
 
   // Atualizar quando necessário
   useEffect(() => {
+    console.log('🔄 useEffect executado - atualizando transformações');
+    console.log('🔄 Dependências:', { calibration, mode, framesCount: frames.length });
     updateTransform();
     updateFramesVisibility();
   }, [calibration, mode, frames]);
@@ -647,13 +663,22 @@ export function TVViewer() {
   // Handlers
   const handleCalibrationChange = (newCalibration: Partial<CalibrationData>) => {
     console.log('🔧 Mudança de calibração:', newCalibration);
+    console.log('🔧 Estado atual ANTES:', calibration);
+    
     if (newCalibration.imageWidth || newCalibration.imageHeight) {
       console.log('📐 Dimensões sendo alteradas:', {
         imageWidth: newCalibration.imageWidth,
-        imageHeight: newCalibration.imageHeight
+        imageHeight: newCalibration.imageHeight,
+        currentImageWidth: calibration.imageWidth,
+        currentImageHeight: calibration.imageHeight
       });
     }
-    setCalibration(prev => ({ ...prev, ...newCalibration }));
+    
+    setCalibration(prev => {
+      const newState = { ...prev, ...newCalibration };
+      console.log('🔧 Estado atual DEPOIS:', newState);
+      return newState;
+    });
   };
 
   const handleModeChange = (newMode: 'calibration' | 'operation') => {
@@ -1759,19 +1784,26 @@ export function TVViewer() {
               Reset Padrão {originalImageDimensions ? `(${originalImageDimensions.width}x${originalImageDimensions.height})` : '(Detectar dimensões)'}
             </button>
               <button
-                onClick={() => handleCalibrationChange({ imageWidth: 30000, imageHeight: 6000 })}
+                onClick={() => {
+                  console.log('🟢 Botão GRANDE clicado');
+                  handleCalibrationChange({ imageWidth: 30000, imageHeight: 6000 });
+                }}
                 className="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700"
               >
                 Grande
               </button>
               <button
-                onClick={() => handleCalibrationChange({ imageWidth: 15000, imageHeight: 3000 })}
+                onClick={() => {
+                  console.log('🟡 Botão PEQUENA clicado');
+                  handleCalibrationChange({ imageWidth: 15000, imageHeight: 3000 });
+                }}
                 className="px-3 py-1 bg-yellow-600 text-white text-xs rounded hover:bg-yellow-700"
               >
                 Pequena
               </button>
               <button
                 onClick={() => {
+                  console.log('🔴 Botão RESET COMPLETO clicado');
                   // Reset simples e direto
                   handleCalibrationChange({ 
                     imageWidth: 20000, 
