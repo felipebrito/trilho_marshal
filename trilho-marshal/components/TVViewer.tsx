@@ -1195,7 +1195,7 @@ export function TVViewer() {
             });
           }
           
-          if (e.key.toLowerCase() === 'p') {
+          if (e.key.toLowerCase() === 'u') {
             // Toggle UDP ativo/inativo
             setIsUDPActive(prev => {
               const newState = !prev;
@@ -2024,7 +2024,7 @@ export function TVViewer() {
           
           {/* Dicas de teclado */}
           <div className="mt-4 text-xs text-gray-400">
-            <p>💡 <strong>Teclas:</strong> C = Alternar modos | R = Reset | O/P = Navegar | T = Travar | P = UDP | S = Salvar</p>
+            <p>💡 <strong>Teclas:</strong> C = Alternar modos | R = Reset | O/P = Navegar | T = Travar | U = UDP | S = Salvar</p>
             <p>💡 <strong>Navegação:</strong> O/P = Movimento horizontal | Scroll trackpad = navegação horizontal</p>
             <p>💡 <strong>UDP:</strong> Envie valores 0-1 para porta 8888 (só em modo operação)</p>
             <p>💡 <strong>Persistência:</strong> Clique em "Salvar Posições" para salvar | "Limpar Tudo" para resetar</p>
