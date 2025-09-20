@@ -352,9 +352,16 @@ export function TVViewer() {
   const getCameraX = useCallback(() => {
     const railLeftX = 0;
     const railRightX = Math.max(0, calibration.imageWidth - 1080);
+    // Calcular posição baseada na porcentagem do range total
     const cameraX = railLeftX + (railRightX - railLeftX) * (calibration.position / 100);
-    // Garantir que a câmera não ultrapasse o limite para evitar fundo escuro
-    return Math.min(cameraX, railRightX); // Permitir movimento completo da imagem
+    console.log('getCameraX:', {
+      imageWidth: calibration.imageWidth,
+      railRightX,
+      position: calibration.position,
+      cameraX,
+      maxPossible: railRightX
+    });
+    return cameraX; // Permitir movimento completo da imagem
   }, [calibration.position, calibration.imageWidth]);
 
   // Calcular o range máximo baseado na escala atual
@@ -448,13 +455,16 @@ export function TVViewer() {
     const translateX = (-cameraX + calibration.offsetX) * calibration.scale;
     const translateY = calibration.offsetY * calibration.scale;
 
-    // Garantir que a imagem não saia do viewport
-    const maxTranslateX = 0; // Não pode ir para a direita além do viewport
-    const minTranslateX = -(calibration.imageWidth * calibration.scale - 1080); // Não pode ir para a esquerda além do viewport
-    
-    const clampedTranslateX = Math.max(minTranslateX, Math.min(maxTranslateX, translateX));
+    console.log('updateTransform:', {
+      cameraX,
+      translateX,
+      translateY,
+      scale: calibration.scale,
+      imageWidth: calibration.imageWidth
+    });
 
-    worldRef.current.style.transform = `translate(${clampedTranslateX}px, ${translateY}px) scale(${calibration.scale})`;
+    // Aplicar transformação sem limitações artificiais
+    worldRef.current.style.transform = `translate(${translateX}px, ${translateY}px) scale(${calibration.scale})`;
   }, [calibration, getCameraX]);
 
   // Atualizar visibilidade dos frames e target zones
