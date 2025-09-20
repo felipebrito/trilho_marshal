@@ -18,6 +18,8 @@ interface CalibrationData {
   position: number;
   gridSize: number;
   showGrid: boolean;
+  imageWidth: number;
+  imageHeight: number;
 }
 
 interface Frame {
@@ -56,6 +58,8 @@ export function TVViewer() {
     position: 0,
     gridSize: 100,
     showGrid: false,
+    imageWidth: 20000,
+    imageHeight: 4000,
   });
 
   // Configurações de animação
@@ -71,7 +75,6 @@ export function TVViewer() {
     imageDelay: 0.2,        // Delay entre imagens (mais rápido)
     stepDelay: 0.3          // Delay para indicadores (mais rápido)
   };
-  const [imageDimensions, setImageDimensions] = useState({ width: 20000, height: 4000 });
   // Bullets pulsantes - pontos redondos clicáveis
   const [bullets, setBullets] = useState<Bullet[]>([
     { id: 'B1', x: 2000, y: 3000, radius: 30, folder: '1966', label: '1966', size: 2.0, color: '#22c55e' },
@@ -344,26 +347,26 @@ export function TVViewer() {
   // Calcular posição da câmera (exatamente como no HTML original)
   const getCameraX = useCallback(() => {
     const railLeftX = 0;
-    const railRightX = Math.max(0, imageDimensions.width - 1080);
+    const railRightX = Math.max(0, calibration.imageWidth - 1080);
     const cameraX = railLeftX + (railRightX - railLeftX) * (calibration.position / 100);
     // Garantir que a câmera não ultrapasse o limite para evitar fundo escuro
     return Math.min(cameraX, railRightX * 0.768); // Limitar a 76.8% do railRightX
-  }, [calibration.position, imageDimensions.width]);
+  }, [calibration.position, calibration.imageWidth]);
 
   // Calcular o range máximo baseado na escala atual
   const getMaxPosition = useCallback(() => {
-    if (imageDimensions.width === 0) {
-      console.log('getMaxPosition: imageDimensions.width é 0, retornando 100');
+    if (calibration.imageWidth === 0) {
+      console.log('getMaxPosition: calibration.imageWidth é 0, retornando 100');
       return 100;
     }
-    const railWidth = Math.max(0, imageDimensions.width - 1080);
+    const railWidth = Math.max(0, calibration.imageWidth - 1080);
     // Ajustar o range máximo baseado na escala para manter a imagem no viewport
     const scaleFactor = calibration.scale;
     const maxPos = Math.ceil((railWidth / 1080) * 100 * scaleFactor);
     // Limitar para evitar que a imagem saia do viewport
     const result = Math.min(76.8, maxPos);
     console.log('getMaxPosition:', { 
-      imageWidth: imageDimensions.width, 
+      imageWidth: calibration.imageWidth, 
       railWidth, 
       scaleFactor, 
       maxPos, 
@@ -371,7 +374,7 @@ export function TVViewer() {
     });
     // Forçar um valor mínimo para teste
     return Math.max(50, result);
-  }, [imageDimensions.width, calibration.scale]);
+  }, [calibration.imageWidth, calibration.scale]);
 
   // Estado para suavização UDP (removido - usando atualização direta)
 
@@ -443,12 +446,12 @@ export function TVViewer() {
 
     // Garantir que a imagem não saia do viewport
     const maxTranslateX = 0; // Não pode ir para a direita além do viewport
-    const minTranslateX = -(imageDimensions.width * calibration.scale - 1080); // Não pode ir para a esquerda além do viewport
+    const minTranslateX = -(calibration.imageWidth * calibration.scale - 1080); // Não pode ir para a esquerda além do viewport
     
     const clampedTranslateX = Math.max(minTranslateX, Math.min(maxTranslateX, translateX));
 
     worldRef.current.style.transform = `translate(${clampedTranslateX}px, ${translateY}px) scale(${calibration.scale})`;
-  }, [calibration, getCameraX, imageDimensions]);
+  }, [calibration, getCameraX]);
 
   // Atualizar visibilidade dos frames e target zones
   const updateFramesVisibility = useCallback(() => {
@@ -489,7 +492,14 @@ export function TVViewer() {
       width: img.naturalWidth,
       height: img.naturalHeight,
     };
-    setImageDimensions(newDimensions);
+    // Atualizar dimensões na calibração se ainda não foram definidas
+    if (calibration.imageWidth === 20000 && calibration.imageHeight === 4000) {
+      setCalibration(prev => ({
+        ...prev,
+        imageWidth: newDimensions.width,
+        imageHeight: newDimensions.height
+      }));
+    }
     console.log('Imagem carregada:', newDimensions);
     
     // Calcular range máximo
@@ -520,6 +530,8 @@ export function TVViewer() {
     position: 2.1,
     gridSize: 100,
     showGrid: false,
+    imageWidth: 20000,
+    imageHeight: 4000,
   });
 
   // Controlar controle por teclas dos bullets baseado no travamento
@@ -1419,8 +1431,8 @@ export function TVViewer() {
           id="world"
           className="absolute left-0 top-0 origin-top-left will-change-transform"
           style={{
-            width: `${Math.max(1080, imageDimensions.width)}px`,
-            height: `${Math.max(1920, imageDimensions.height)}px`,
+            width: `${Math.max(1080, calibration.imageWidth)}px`,
+            height: `${Math.max(1920, calibration.imageHeight)}px`,
           }}
         >
           {/* Background Image */}
@@ -1431,7 +1443,11 @@ export function TVViewer() {
             alt="Background"
             className="absolute top-0 left-0 w-auto h-auto max-w-none max-h-none"
             onLoad={handleImageLoad}
-            style={{ imageRendering: 'auto' }}
+            style={{ 
+              imageRendering: 'auto',
+              width: `${calibration.imageWidth}px`,
+              height: `${calibration.imageHeight}px`
+            }}
           />
           
           {/* Frames */}
@@ -1542,7 +1558,7 @@ export function TVViewer() {
 
         {/* Info Display */}
         <div className="absolute left-4 top-4 px-3 py-2 bg-black/60 border border-gray-600 rounded-full text-white text-sm backdrop-blur-sm z-10">
-          {imageDimensions.width}×{imageDimensions.height} • escala {Math.round(calibration.scale * 100)}% • pos {calibration.position.toFixed(1)}% • off {calibration.offsetX} / {calibration.offsetY}
+          {calibration.imageWidth}×{calibration.imageHeight} • escala {Math.round(calibration.scale * 100)}% • pos {calibration.position.toFixed(1)}% • off {calibration.offsetX} / {calibration.offsetY}
         </div>
 
         {/* Operation Mode HUD */}
@@ -1628,6 +1644,71 @@ export function TVViewer() {
               onChange={(e) => handleCalibrationChange({ offsetY: parseInt(e.target.value) })}
               className="w-full"
             />
+          </div>
+
+          {/* Dimensões da Imagem */}
+          <div className="mb-4 p-3 bg-gray-800 rounded-lg">
+            <h3 className="text-sm font-medium text-white mb-3">📐 Dimensões da Imagem</h3>
+            
+            {/* Largura da Imagem */}
+            <div className="mb-3">
+              <label className="block text-sm font-medium text-white mb-2">
+                Largura: {calibration.imageWidth}px
+              </label>
+              <input
+                type="range"
+                min="5000"
+                max="50000"
+                step="100"
+                value={calibration.imageWidth}
+                onChange={(e) => handleCalibrationChange({ imageWidth: parseInt(e.target.value) })}
+                className="w-full"
+              />
+              <p className="text-xs text-gray-400 mt-1">
+                💡 Ajuste a largura total da imagem de fundo
+              </p>
+            </div>
+
+            {/* Altura da Imagem */}
+            <div className="mb-3">
+              <label className="block text-sm font-medium text-white mb-2">
+                Altura: {calibration.imageHeight}px
+              </label>
+              <input
+                type="range"
+                min="1000"
+                max="10000"
+                step="50"
+                value={calibration.imageHeight}
+                onChange={(e) => handleCalibrationChange({ imageHeight: parseInt(e.target.value) })}
+                className="w-full"
+              />
+              <p className="text-xs text-gray-400 mt-1">
+                💡 Ajuste a altura total da imagem de fundo
+              </p>
+            </div>
+
+            {/* Botões de Reset */}
+            <div className="flex gap-2">
+              <button
+                onClick={() => handleCalibrationChange({ imageWidth: 20000, imageHeight: 4000 })}
+                className="px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
+              >
+                Reset Padrão
+              </button>
+              <button
+                onClick={() => handleCalibrationChange({ imageWidth: 30000, imageHeight: 6000 })}
+                className="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700"
+              >
+                Grande
+              </button>
+              <button
+                onClick={() => handleCalibrationChange({ imageWidth: 15000, imageHeight: 3000 })}
+                className="px-3 py-1 bg-yellow-600 text-white text-xs rounded hover:bg-yellow-700"
+              >
+                Pequena
+              </button>
+            </div>
           </div>
 
           {/* Grid */}
