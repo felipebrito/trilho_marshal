@@ -59,8 +59,8 @@ export function TVViewer() {
     position: 0,
     gridSize: 100,
     showGrid: false,
-    imageWidth: 20000,
-    imageHeight: 4000,
+    imageWidth: 17008,
+    imageHeight: 11339,
   });
 
   // Estado para armazenar as dimensões originais da imagem
@@ -377,26 +377,9 @@ export function TVViewer() {
 
   // Calcular o range máximo baseado na escala atual
   const getMaxPosition = useCallback(() => {
-    if (calibration.imageWidth === 0) {
-      console.log('getMaxPosition: calibration.imageWidth é 0, retornando 100');
-      return 100;
-    }
-    const railWidth = Math.max(0, calibration.imageWidth - 1080);
-    // Ajustar o range máximo baseado na escala para manter a imagem no viewport
-    const scaleFactor = calibration.scale;
-    const maxPos = Math.ceil((railWidth / 1080) * 100 * scaleFactor);
-    // Permitir movimento completo da imagem
-    const result = maxPos;
-    console.log('getMaxPosition:', { 
-      imageWidth: calibration.imageWidth, 
-      railWidth, 
-      scaleFactor, 
-      maxPos, 
-      result 
-    });
-    // Retornar o valor calculado sem limitações artificiais
-    return result;
-  }, [calibration.imageWidth, calibration.scale]);
+    // Sempre retornar 100 para posição (0-100%)
+    return 100;
+  }, []);
 
   // Estado para suavização UDP (removido - usando atualização direta)
 
@@ -490,6 +473,30 @@ export function TVViewer() {
     // Verificar se foi aplicada
     const appliedTransform = worldRef.current.style.transform;
     console.log('✅ Transformação aplicada:', appliedTransform);
+    
+    // Debug específico da imagem
+    if (imgRef.current) {
+      console.log('🖼️ Imagem atual:', {
+        naturalWidth: imgRef.current.naturalWidth,
+        naturalHeight: imgRef.current.naturalHeight,
+        clientWidth: imgRef.current.clientWidth,
+        clientHeight: imgRef.current.clientHeight,
+        offsetWidth: imgRef.current.offsetWidth,
+        offsetHeight: imgRef.current.offsetHeight,
+        style: imgRef.current.style.cssText
+      });
+    } else {
+      console.log('❌ imgRef.current não existe');
+    }
+    
+    // Debug do container world
+    console.log('🌍 Container world:', {
+      clientWidth: worldRef.current.clientWidth,
+      clientHeight: worldRef.current.clientHeight,
+      offsetWidth: worldRef.current.offsetWidth,
+      offsetHeight: worldRef.current.offsetHeight,
+      style: worldRef.current.style.cssText
+    });
   }, [calibration, getCameraX]);
 
   // Atualizar visibilidade dos frames e target zones
@@ -535,14 +542,14 @@ export function TVViewer() {
     // Armazenar dimensões originais da imagem
     setOriginalImageDimensions(newDimensions);
     
-    // Atualizar dimensões na calibração se ainda não foram definidas
-    if (calibration.imageWidth === 20000 && calibration.imageHeight === 4000) {
-      setCalibration(prev => ({
-        ...prev,
-        imageWidth: newDimensions.width,
-        imageHeight: newDimensions.height
-      }));
-    }
+          // Atualizar dimensões na calibração se ainda não foram definidas
+          if (calibration.imageWidth === 17008 && calibration.imageHeight === 11339) {
+            setCalibration(prev => ({
+              ...prev,
+              imageWidth: newDimensions.width,
+              imageHeight: newDimensions.height
+            }));
+          }
     console.log('Imagem carregada:', newDimensions);
     console.log('Dimensões originais armazenadas:', newDimensions);
     
@@ -576,8 +583,8 @@ export function TVViewer() {
     position: 2.1,
     gridSize: 100,
     showGrid: false,
-    imageWidth: 20000,
-    imageHeight: 4000,
+    imageWidth: 17008,
+    imageHeight: 11339,
   });
 
   // Controlar controle por teclas dos bullets baseado no travamento
@@ -1516,7 +1523,9 @@ export function TVViewer() {
             className="absolute top-0 left-0 w-auto h-auto max-w-none max-h-none"
             onLoad={handleImageLoad}
             style={{ 
-              imageRendering: 'auto'
+              imageRendering: 'auto',
+              width: `${calibration.imageWidth}px`,
+              height: `${calibration.imageHeight}px`
             }}
           />
           
@@ -1656,8 +1665,8 @@ export function TVViewer() {
             </label>
             <input
               type="range"
-              min="10"
-              max="300"
+              min="0"
+              max="200"
               step="1"
               value={calibration.scale * 100}
               onChange={(e) => handleCalibrationChange({ scale: parseFloat(e.target.value) / 100 })}
@@ -1673,14 +1682,14 @@ export function TVViewer() {
             <input
               type="range"
               min="0"
-              max={getMaxPosition()}
+              max="100"
               step="1"
               value={calibration.position}
               onChange={(e) => handleCalibrationChange({ position: parseFloat(e.target.value) })}
               className="w-full"
             />
             <p className="text-xs text-gray-400 mt-1">
-              💡 Use scroll horizontal no touchpad (0-{getMaxPosition()}%)
+              💡 Use scroll horizontal no touchpad (0-100%)
             </p>
           </div>
 
@@ -1776,16 +1785,16 @@ export function TVViewer() {
                       imageHeight: naturalHeight 
                     });
                     console.log('Reset para dimensões detectadas:', dimensions);
-                  } else {
-                    // Fallback para valores padrão
-                    handleCalibrationChange({ imageWidth: 20000, imageHeight: 4000 });
-                    console.log('Reset para valores padrão (dimensões não detectadas)');
-                  }
-                } else {
-                  // Fallback para valores padrão
-                  handleCalibrationChange({ imageWidth: 20000, imageHeight: 4000 });
-                  console.log('Reset para valores padrão (imagem não encontrada)');
-                }
+              } else {
+                // Fallback para valores padrão
+                handleCalibrationChange({ imageWidth: 17008, imageHeight: 11339 });
+                console.log('Reset para valores padrão (dimensões não detectadas)');
+              }
+            } else {
+              // Fallback para valores padrão
+              handleCalibrationChange({ imageWidth: 17008, imageHeight: 11339 });
+              console.log('Reset para valores padrão (imagem não encontrada)');
+            }
               }}
               className="px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
             >
@@ -1794,7 +1803,8 @@ export function TVViewer() {
               <button
                 onClick={() => {
                   console.log('🟢 Botão GRANDE clicado');
-                  handleCalibrationChange({ imageWidth: 30000, imageHeight: 6000 });
+                  // Proporção 3:2 baseada na imagem real (17008x11339)
+                  handleCalibrationChange({ imageWidth: 18000, imageHeight: 12000 });
                 }}
                 className="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700"
               >
@@ -1803,38 +1813,12 @@ export function TVViewer() {
               <button
                 onClick={() => {
                   console.log('🟡 Botão PEQUENA clicado');
-                  handleCalibrationChange({ imageWidth: 15000, imageHeight: 3000 });
+                  // Proporção 3:2 baseada na imagem real (17008x11339)
+                  handleCalibrationChange({ imageWidth: 12000, imageHeight: 8000 });
                 }}
                 className="px-3 py-1 bg-yellow-600 text-white text-xs rounded hover:bg-yellow-700"
               >
                 Pequena
-              </button>
-              <button
-                onClick={() => {
-                  console.log('🔴 Botão RESET COMPLETO clicado');
-                  // Reset simples e direto
-                  handleCalibrationChange({ 
-                    imageWidth: 20000, 
-                    imageHeight: 4000,
-                    scale: 1.0,
-                    offsetX: 0,
-                    offsetY: 0,
-                    position: 0
-                  });
-                  console.log('Reset completo aplicado');
-                }}
-                className="px-3 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700"
-              >
-                Reset Completo
-              </button>
-              <button
-                onClick={() => {
-                  alert('Teste de clique funcionando!');
-                  console.log('🧪 Botão TESTE clicado');
-                }}
-                className="px-3 py-1 bg-purple-600 text-white text-xs rounded hover:bg-purple-700"
-              >
-                TESTE
               </button>
             </div>
           </div>
