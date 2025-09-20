@@ -6,6 +6,7 @@ import { Draggable } from 'gsap/Draggable';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { useUDPControl } from '@/hooks/useUDPControl';
 import BulletAnimation from './BulletAnimation';
+import GradualBlur from './GradualBlur';
 
 // Registrar o plugin Draggable
 gsap.registerPlugin(Draggable);
@@ -1509,6 +1510,29 @@ export function TVViewer() {
       <div className="relative w-full h-screen bg-black overflow-hidden">
       {/* TV Container */}
       <div id="tv" className="relative w-full h-full border-4 border-gray-600 rounded-xl overflow-hidden bg-gray-900">
+        
+        {/* Gradual Blur nas laterais para efeito de lupa horizontal */}
+        <GradualBlur
+          position="left"
+          width="8rem"
+          strength={3}
+          divCount={8}
+          curve="bezier"
+          exponential={true}
+          opacity={0.8}
+          preset="intense"
+        />
+        
+        <GradualBlur
+          position="right"
+          width="8rem"
+          strength={3}
+          divCount={8}
+          curve="bezier"
+          exponential={true}
+          opacity={0.8}
+          preset="intense"
+        />
         
         {/* World Container */}
         <div 
