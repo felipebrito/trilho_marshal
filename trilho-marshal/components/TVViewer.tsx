@@ -201,25 +201,85 @@ export function TVViewer() {
   
   // Estado para controle de cliques e movimento
   const lastClickTime = useRef<number>(0);
-  const lastPosition = useRef<number>(calibration.position);
+  const lastPosition = useRef<number>(0);
   const movementTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isModalOpenRef = useRef<boolean>(false);
+
+  // Inicializar lastPosition quando o componente monta
+  useEffect(() => {
+    lastPosition.current = calibration.position;
+    console.log(`🔧 Inicializando lastPosition: ${lastPosition.current}`);
+  }, [calibration.position]); // Sempre que a posição mudar
+
+  // Manter isModalOpenRef sincronizado com o estado
+  useEffect(() => {
+    isModalOpenRef.current = isModalOpen;
+    console.log(`🔧 Atualizando isModalOpenRef: ${isModalOpen}`);
+  }, [isModalOpen]);
+
+  // Animar entrada do modal
+  useEffect(() => {
+    if (isModalOpen && selectedBullet) {
+      const modalElement = document.getElementById('modal-overlay');
+      if (modalElement) {
+        // Animar a entrada com fade in
+        gsap.fromTo(modalElement, 
+          { opacity: 0 },
+          { 
+            opacity: 1,
+            duration: 0.3,
+            ease: "power2.out"
+          }
+        );
+      }
+    }
+  }, [isModalOpen, selectedBullet]);
   
   // Estados para controle de movimento e fechamento automático de modais
   const [selectedBulletForControl, setSelectedBulletForControl] = useState<Bullet | null>(null);
 
-  // Função simples para detectar movimento e fechar modal
-  const checkMovementAndCloseModal = (newPosition: number) => {
-    const positionDiff = Math.abs(newPosition - lastPosition.current);
-    const movementThreshold = 1.0; // Threshold baixo para detectar qualquer movimento
-    
-    if (positionDiff > movementThreshold && isModalOpen) {
-      console.log(`🚀 Movimento detectado: ${lastPosition.current} → ${newPosition} (diff: ${positionDiff}) - Fechando modal`);
+  // Função para fechar modal com animação suave
+  const closeModalWithAnimation = useCallback(() => {
+    const modalElement = document.getElementById('modal-overlay');
+    if (modalElement) {
+      // Animar o fechamento com fade out
+      gsap.to(modalElement, {
+        opacity: 0,
+        duration: 0.3,
+        ease: "power2.out",
+        onComplete: () => {
+          setIsModalOpen(false);
+          setSelectedBullet(null);
+        }
+      });
+    } else {
+      // Fallback se o elemento não existir
       setIsModalOpen(false);
       setSelectedBullet(null);
     }
+  }, []);
+
+  // Função simples para detectar movimento e fechar modal
+  const checkMovementAndCloseModal = useCallback((newPosition: number) => {
+    const positionDiff = Math.abs(newPosition - lastPosition.current);
+    const movementThreshold = 1.0; // Threshold baixo para detectar qualquer movimento
+    const modalIsOpen = isModalOpenRef.current;
+    
+    console.log(`🔍 MOVIMENTO DEBUG: lastPosition=${lastPosition.current}, newPosition=${newPosition}, diff=${positionDiff}, isModalOpen=${modalIsOpen}, threshold=${movementThreshold}`);
+    
+    if (positionDiff > movementThreshold) {
+      if (modalIsOpen) {
+        console.log(`🚀 MOVIMENTO DETECTADO: ${lastPosition.current} → ${newPosition} (diff: ${positionDiff}) - FECHANDO MODAL COM ANIMAÇÃO`);
+        closeModalWithAnimation();
+      } else {
+        console.log(`⏸️ Movimento detectado mas modal já está fechado: diff=${positionDiff}, isModalOpen=${modalIsOpen}`);
+      }
+    } else {
+      console.log(`⏸️ Movimento insuficiente: diff=${positionDiff}, threshold=${movementThreshold}`);
+    }
     
     lastPosition.current = newPosition;
-  };
+  }, [closeModalWithAnimation]);
   
 
   // Função para carregar imagens de uma pasta específica
@@ -418,7 +478,8 @@ export function TVViewer() {
 
   // Callback para mudança de posição via UDP
   const handleUDPPositionChange = useCallback((position: number) => {
-    console.log('UDP: Recebido valor:', position, 'Modo atual:', mode);
+    const modalIsOpen = isModalOpenRef.current;
+    console.log('🎯 UDP: Recebido valor:', position, 'Modo atual:', mode, 'Modal aberto:', modalIsOpen);
     
     if (mode !== 'operation') {
       console.log('UDP: Ignorado - não está em modo operação');
@@ -430,24 +491,25 @@ export function TVViewer() {
     const maxPos = getMaxPosition();
     const newPosition = Math.max(0, Math.min(maxPos, percentage));
     
-    console.log('UDP: Conversão:', {
+    console.log('🎯 UDP: Conversão:', {
       valorOriginal: position,
       percentage: percentage,
       maxPos: maxPos,
       newPosition: newPosition,
-      posicaoAtual: calibration.position
+      posicaoAtual: calibration.position,
+      lastPosition: lastPosition.current
     });
     
+    // Verificar movimento e fechar modal ANTES de atualizar a posição
+    console.log('🎯 UDP: Verificando movimento antes de atualizar posição');
+    checkMovementAndCloseModal(newPosition);
     
     // Atualizar posição diretamente (sem suavização para máxima responsividade)
     setCalibration(prev => ({
       ...prev,
       position: newPosition
     }));
-    
-    // Verificar movimento e fechar modal se necessário
-    checkMovementAndCloseModal(newPosition);
-  }, [getMaxPosition, mode, calibration.position, isModalOpen]);
+  }, [getMaxPosition, mode, calibration.position, checkMovementAndCloseModal]);
 
   // Animação UDP removida - usando atualização direta para máxima responsividade
 
@@ -465,6 +527,7 @@ export function TVViewer() {
       mode,
       enabled,
       isConnected,
+      lastPosition: lastPosition.current,
       timestamp: new Date().toISOString()
     });
   }, [isUDPActive, mode, isConnected]);
@@ -2186,14 +2249,17 @@ export function TVViewer() {
 
         {/* Modal do Carrossel / Frame A Animation */}
         {isModalOpen && selectedBullet && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div 
+            id="modal-overlay"
+            className="fixed inset-0 z-50 flex items-center justify-center"
+            style={{ opacity: 0 }}
+          >
             {/* Overlay com blur */}
             <div 
               className="absolute inset-0 bg-black/30 backdrop-blur-lg"
               onClick={() => {
                 console.log('🚪 FECHANDO MODAL MANUALMENTE (overlay)');
-                setIsModalOpen(false);
-                setSelectedBullet(null);
+                closeModalWithAnimation();
               }}
             ></div>
             
@@ -2203,8 +2269,7 @@ export function TVViewer() {
               <button
                 onClick={() => {
                   console.log('🚪 FECHANDO MODAL MANUALMENTE (botão X principal)');
-                  setIsModalOpen(false);
-                  setSelectedBullet(null);
+                  closeModalWithAnimation();
                 }}
                 className="absolute top-4 right-4 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full transition-all duration-200 z-50"
                 aria-label="Fechar modal"

@@ -3,7 +3,7 @@ import socket
 import time
 import sys
 
-def send_udp_data(port=8889):
+def send_udp_data(port=8888):
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     
     print(f"Enviando dados UDP para localhost:{port}")
@@ -17,5 +17,5 @@ def send_udp_data(port=8889):
     print("✅ Teste concluído")
 
 if __name__ == "__main__":
-    port = int(sys.argv[1]) if len(sys.argv) > 1 else 8889
+    port = int(sys.argv[1]) if len(sys.argv) > 1 else 8888
     send_udp_data(port)

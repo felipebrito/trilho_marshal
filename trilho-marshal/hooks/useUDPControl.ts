@@ -13,8 +13,14 @@ export function useUDPControl({ onPositionChange, enabled = true }: UDPControlOp
   const enabledRef = useRef<boolean>(enabled);
 
   const connectWebSocket = () => {
-    if (!enabled) return;
-    if (wsRef.current?.readyState === WebSocket.OPEN) return;
+    if (!enabled) {
+      console.log('UDP Control: Desabilitado, não conectando');
+      return;
+    }
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      console.log('UDP Control: Já conectado');
+      return;
+    }
 
     try {
       console.log('UDP Control: Conectando WebSocket...');
@@ -55,6 +61,7 @@ export function useUDPControl({ onPositionChange, enabled = true }: UDPControlOp
       ws.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
+          console.log('UDP Control: 📡 Mensagem recebida:', data);
           if (data.type === 'position' && data.value !== undefined) {
             if (data.value !== lastPositionRef.current) {
               lastPositionRef.current = data.value;
@@ -120,6 +127,7 @@ export function useUDPControl({ onPositionChange, enabled = true }: UDPControlOp
     
     // Só reconectar se o estado realmente mudou
     if (enabled !== enabledRef.current) {
+      console.log('UDP Control: Estado mudou, atualizando...');
       enabledRef.current = enabled;
       
       if (enabled) {
