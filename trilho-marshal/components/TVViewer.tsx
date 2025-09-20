@@ -289,9 +289,7 @@ export function TVViewer() {
   const [selectedZone, setSelectedZone] = useState<TargetZone | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
-  // Estado do controle UDP
-  const [udpEnabled, setUdpEnabled] = useState(false);
-  const [udpConnected, setUdpConnected] = useState(false);
+  // Estado do controle UDP - REMOVIDO: usando isUDPActive agora
 
   // Dados dos slides para cada frame (como no HTML original)
   const SLIDE_DATA = {
@@ -395,13 +393,10 @@ export function TVViewer() {
   // Hook UDP Control - só funciona em modo operação
   const { isConnected } = useUDPControl({
     onPositionChange: handleUDPPositionChange,
-    enabled: udpEnabled && mode === 'operation'
+    enabled: isUDPActive && mode === 'operation'
   });
 
-  // Atualizar estado de conexão UDP
-  useEffect(() => {
-    setUdpConnected(isConnected);
-  }, [isConnected]);
+  // Atualizar estado de conexão UDP - REMOVIDO: usando isUDPActive agora
 
 
   // Aplicar transformações (exatamente como no HTML original)
@@ -1520,9 +1515,9 @@ export function TVViewer() {
         {mode === 'operation' && (
           <div className="absolute top-4 right-4 px-3 py-2 bg-black/60 border border-gray-600 rounded-full text-white text-sm backdrop-blur-sm z-10">
             • pos {calibration.position.toFixed(1)}% — • tecla <b>C</b> para Controles — • <b>← →</b> para navegar
-            {udpEnabled && (
+            {isUDPActive && (
               <span className="ml-2">
-                — • UDP {udpConnected ? '🟢' : '🔴'}
+                — • UDP {isConnected ? '🟢' : '🔴'}
               </span>
             )}
           </div>
@@ -1701,38 +1696,6 @@ export function TVViewer() {
             </div>
           </div>
 
-          {/* Controle UDP */}
-          <div className="mb-4 p-3 bg-gray-800 rounded-lg">
-            <div className="flex items-center justify-between mb-2">
-              <label className="text-sm font-medium text-white">
-                Controle UDP (Porta 8888)
-              </label>
-              <div className="flex items-center gap-2">
-                <div className={`w-2 h-2 rounded-full ${udpConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                <span className="text-xs text-gray-400">
-                  {udpConnected ? 'Conectado' : 'Desconectado'}
-                </span>
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setUdpEnabled(!udpEnabled)}
-                className={`px-3 py-1 text-xs rounded ${
-                  udpEnabled 
-                    ? 'bg-green-600 hover:bg-green-700 text-white' 
-                    : 'bg-gray-600 hover:bg-gray-700 text-white'
-                }`}
-              >
-                {udpEnabled ? 'Desativar UDP' : 'Ativar UDP'}
-              </button>
-              <span className="text-xs text-gray-400 self-center">
-                Só funciona em modo operação
-              </span>
-            </div>
-            <div className="mt-2 text-xs text-yellow-400">
-              ⚠️ UDP ativo apenas no modo operação (tecla C)
-            </div>
-          </div>
 
           {/* Controle UDP */}
           <div className="mb-4 p-3 bg-gray-800 rounded-lg">
