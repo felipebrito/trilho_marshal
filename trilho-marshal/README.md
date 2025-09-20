@@ -1,12 +1,16 @@
 # Trilho Marshal - Instalação Interativa
 
-Uma aplicação interativa que simula um trilho com uma TV sobre uma parede, permitindo navegação horizontal em uma imagem de fundo com bullets pulsantes clicáveis. Inclui sistema de calibração avançado, animações sequenciais e controle via UDP.
+Uma aplicação interativa que simula um trilho com uma TV sobre uma parede, permitindo navegação horizontal em uma imagem de fundo com bullets pulsantes clicáveis. Inclui sistema de calibração avançado, animações sequenciais, controle via UDP em tempo real e sistema de bullets configuráveis.
 
 ## ✨ Novidades da Versão Atual
 
-- **Modal customizado** com blur funcional ao redor
+- **Controle UDP em tempo real** com WebSocket para máxima responsividade
+- **Sistema de bullets configuráveis** com posições, tamanhos e cores personalizáveis
 - **Animações sequenciais** melhoradas com transições suaves
 - **Sistema de debug** visual para desenvolvimento
+- **Controle de teclado** para bullets quando background travado
+- **Persistência de dados** com salvamento manual
+- **Modal customizado** com blur funcional ao redor
 - **Tratamento de erros** robusto para carregamento de imagens
 - **Fundo personalizado** (#fff1ef) para melhor contraste
 - **Performance otimizada** com CSS transitions
@@ -42,15 +46,19 @@ A aplicação estará disponível em:
 - **Local**: http://localhost:3000
 - **Rede**: http://[seu-ip]:3000
 
-### 4. Executar Servidor UDP (Opcional)
+### 4. Executar Servidor WebSocket (Obrigatório para UDP)
 
 Para controle via UDP, execute em um terminal separado:
 
 ```bash
-npm run udp-server
+node websocket-server.js
 ```
 
-O servidor UDP estará disponível na porta 8888.
+O servidor estará disponível em:
+- **UDP**: Porta 8888
+- **WebSocket**: Porta 8081
+
+**Nota**: O servidor WebSocket é obrigatório para o controle UDP funcionar.
 
 ## 🎮 Controles
 
@@ -59,6 +67,15 @@ O servidor UDP estará disponível na porta 8888.
 - **R**: Reset para posição ideal
 - **O**: Movimento horizontal para esquerda
 - **P**: Movimento horizontal para direita
+- **U**: Ativar/desativar controle UDP
+- **T**: Travar/destravar background
+- **S**: Salvar todas as configurações
+- **B**: Abrir configurador de bullets
+- **ESC**: Deselecionar bullet (quando background travado)
+- **Setas**: Mover bullet selecionado (quando background travado)
+- **Shift + Setas**: Movimento maior do bullet
+- **Page Up/Down**: Movimento vertical do bullet
+- **Home/End**: Movimento horizontal do bullet
 
 ### Touchpad/Mouse
 - **Scroll horizontal**: Navegação horizontal
@@ -79,12 +96,15 @@ O servidor UDP estará disponível na porta 8888.
 - Configuração de bullets (posições, tamanhos, cores)
 - Grid de referência
 - Controle UDP
+- Configurador de bullets em tempo real
 
 ### Modo Operação
 - Navegação horizontal fluida
 - Bullets pulsantes clicáveis
 - Animações sequenciais de imagens
 - Controle via UDP (valores 0-1)
+- Controle de teclado para bullets
+- Background travável
 
 ### Bullets Interativos
 - 12 pontos pulsantes configuráveis
@@ -101,14 +121,15 @@ O servidor UDP estará disponível na porta 8888.
 trilho-marshal/
 ├── app/
 │   ├── page.tsx              # Página principal
-│   └── globals.css           # Estilos globais
+│   ├── globals.css           # Estilos globais
+│   └── api/
+│       └── udp-control/      # API para controle UDP
+│           └── route.ts
 ├── components/
 │   ├── TVViewer.tsx          # Componente principal
 │   └── FadeContent.tsx       # Componente de animações
 ├── hooks/
 │   └── useUDPControl.ts      # Hook para controle UDP
-├── lib/
-│   └── udp-server.js         # Servidor UDP
 ├── public/
 │   ├── bg300x200-comtv.jpg   # Imagem de fundo
 │   ├── 00_bg.png            # Imagens de animação
@@ -118,9 +139,9 @@ trilho-marshal/
 │       ├── 1966/
 │       ├── 1989/
 │       └── ...
-├── scripts/
-│   ├── test-udp.js           # Script de teste UDP
-│   └── simple-udp-test.js    # Teste simples UDP
+├── websocket-server.js       # Servidor WebSocket para UDP
+├── test-udp.py              # Script de teste UDP (Python)
+├── test-websocket.py        # Script de teste WebSocket
 └── README.md
 ```
 
@@ -133,10 +154,19 @@ trilho-marshal/
 - **Reset**: Tecla R ou botão "Reset Ideal"
 
 ### Controle UDP
-- **Porta**: 8888
+- **Porta UDP**: 8888
+- **Porta WebSocket**: 8081
 - **Formato**: Valores de 0 a 1 (0 = esquerda, 1 = direita)
 - **Modo**: Funciona apenas em modo operação
-- **Teste**: Use `npm run test-udp` para testar
+- **Ativação**: Tecla 'U' para ativar/desativar
+- **Teste**: Use `python test-udp.py` para testar
+
+### Sistema de Bullets
+- **Quantidade**: 12 bullets configuráveis
+- **Propriedades**: Posição X/Y, tamanho, cor
+- **Configuração**: Tecla 'B' para abrir configurador
+- **Controle**: Teclado quando background travado
+- **Persistência**: Salva automaticamente no localStorage
 
 ### Imagens
 - **Fundo**: `public/bg300x200-comtv.jpg`
@@ -166,9 +196,22 @@ npm install
 - Verifique se o localStorage está habilitado
 
 ### Controle UDP não funciona
-- Verifique se o servidor UDP está rodando
+- Verifique se o servidor WebSocket está rodando (`node websocket-server.js`)
 - Confirme que está em modo operação (tecla C)
-- Teste com `npm run test-udp`
+- Verifique se o UDP está ativado (tecla U)
+- Teste com `python test-udp.py`
+- Verifique os logs no console do navegador
+
+### Bullets não se movem com teclado
+- Confirme que o background está travado (tecla T)
+- Clique no bullet para selecioná-lo
+- Use as setas para mover
+- Pressione ESC para deselecionar
+
+### WebSocket não conecta
+- Verifique se o servidor está rodando na porta 8081
+- Confirme que não há firewall bloqueando
+- Verifique os logs do servidor WebSocket
 
 ### Modal sem blur
 - Verifique se o navegador suporta `backdrop-filter`
@@ -183,11 +226,12 @@ npm install
 ## 📝 Scripts Disponíveis
 
 ```bash
-npm run dev          # Executar aplicação
+npm run dev          # Executar aplicação Next.js
 npm run build        # Build para produção
 npm run start        # Executar build de produção
-npm run udp-server   # Executar servidor UDP
-npm run test-udp     # Testar controle UDP
+node websocket-server.js  # Executar servidor WebSocket
+python test-udp.py   # Testar controle UDP
+python test-websocket.py  # Testar WebSocket
 ```
 
 ## 🎨 Personalização
@@ -211,6 +255,20 @@ npm run test-udp     # Testar controle UDP
 3. Use os sliders na calibração para teste em tempo real
 
 ## 🔧 Melhorias Técnicas
+
+### Sistema de Controle UDP em Tempo Real
+- **WebSocket dedicado** para máxima responsividade
+- **Bridge UDP → WebSocket** para comunicação em tempo real
+- **Reconexão automática** com tratamento de erros
+- **Logs detalhados** para debug e monitoramento
+- **Controle de estado** para ativar/desativar UDP
+
+### Sistema de Bullets Configuráveis
+- **12 bullets personalizáveis** com posições, tamanhos e cores
+- **Configurador em tempo real** com interface intuitiva
+- **Controle de teclado** quando background travado
+- **Persistência automática** no localStorage
+- **Validação de dados** para evitar erros
 
 ### Modal Customizado
 - **Substituição do shadcn Dialog** por modal HTML/CSS puro
