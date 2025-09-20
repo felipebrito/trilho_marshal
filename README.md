@@ -4,6 +4,7 @@ Uma aplicação interativa que simula um trilho com uma TV sobre uma parede, per
 
 ## ✨ Novidades da Versão Atual
 
+- **Sistema de fechamento automático de modal** por movimento (UDP, teclas, scroll)
 - **Controle UDP em tempo real** com WebSocket para máxima responsividade
 - **Sistema de bullets configuráveis** com posições, tamanhos e cores personalizáveis
 - **Animações sequenciais** melhoradas com transições suaves
@@ -14,6 +15,7 @@ Uma aplicação interativa que simula um trilho com uma TV sobre uma parede, per
 - **Tratamento de erros** robusto para carregamento de imagens
 - **Fundo personalizado** (#fff1ef) para melhor contraste
 - **Performance otimizada** com CSS transitions
+- **Componente BulletAnimation separado** para melhor performance
 
 ## 🚀 Instalação e Execução
 
@@ -118,6 +120,7 @@ O servidor estará disponível em:
 - Controle via UDP (valores 0-1)
 - Controle de teclado para bullets
 - Background travável
+- **Fechamento automático de modal** por movimento
 
 ### Bullets Interativos
 - 12 pontos pulsantes configuráveis
@@ -180,6 +183,13 @@ trilho-marshal/
 - **Configuração**: Tecla 'B' para abrir configurador
 - **Controle**: Teclado quando background travado
 - **Persistência**: Salva automaticamente no localStorage
+
+### Sistema de Fechamento Automático de Modal
+- **Ativação**: Automática quando modal está aberto
+- **Triggers**: UDP, teclas O/P, scroll/trackpad
+- **Threshold**: 1.0 (detecção sensível de movimento)
+- **Comportamento**: Modal fecha imediatamente ao detectar movimento
+- **Reabertura**: Manual via clique no bullet
 
 ### Imagens
 - **Fundo**: `public/bg300x200-comtv.jpg`
@@ -329,6 +339,13 @@ npm run help             # Mostrar ajuda
 - **CSS transitions** em vez de GSAP para melhor performance
 - **Fade e blur** suaves com transições configuráveis
 - **Estados visuais** claros para cada etapa da animação
+
+### Sistema de Fechamento Automático de Modal
+- **Função `checkMovementAndCloseModal`** para detecção simples e eficaz
+- **Threshold baixo (1.0)** para detecção sensível de qualquer movimento
+- **Integração completa** em UDP, teclas e scroll
+- **Fechamento imediato** sem delays ou timeouts
+- **Performance otimizada** com refs para evitar re-renders
 
 ## 📄 Licença
 
