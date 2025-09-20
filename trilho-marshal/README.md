@@ -4,6 +4,7 @@ Uma aplicação interativa que simula um trilho com uma TV sobre uma parede, per
 
 ## ✨ Novidades da Versão Atual
 
+- **Efeito de gradual blur nas laterais** para sensação de lupa/realidade aumentada
 - **Fechamento automático de modal** com detecção de movimento UDP em tempo real
 - **Animações GSAP suaves** para entrada e saída do modal (fade in/out)
 - **Controle UDP em tempo real** com WebSocket para máxima responsividade
@@ -119,6 +120,7 @@ O servidor estará disponível em:
 - Animações sequenciais de imagens
 - Controle via UDP (valores 0-1)
 - **Fechamento automático de modal** quando detecta movimento
+- **Efeito de lupa horizontal** com blur gradual nas laterais
 - Controle de teclado para bullets
 - Background travável
 
@@ -143,7 +145,9 @@ trilho-marshal/
 │           └── route.ts
 ├── components/
 │   ├── TVViewer.tsx          # Componente principal
-│   └── FadeContent.tsx       # Componente de animações
+│   ├── FadeContent.tsx       # Componente de animações
+│   ├── GradualBlur.tsx       # Efeito de blur gradual para lupa
+│   └── GradualBlur.css       # Estilos do efeito de blur
 ├── hooks/
 │   └── useUDPControl.ts      # Hook para controle UDP
 ├── public/
@@ -328,6 +332,14 @@ npm run help             # Mostrar ajuda
 - **Logs detalhados** no console para desenvolvimento
 - **Debug visual** com informações em tempo real no modal
 - **Tratamento de erros** robusto para carregamento de imagens
+
+### Efeito de Lupa/Realidade Aumentada
+- **Blur gradual nas laterais** para simular efeito de lupa horizontal
+- **Área central nítida** com desfoque progressivo nas bordas
+- **Transição suave** com curva bezier para efeito natural
+- **Configuração intensa** com strength=3 e 8 divisões
+- **Largura otimizada** de 8rem para cada lateral
+- **Efeito de realidade aumentada** simulando TV escaneando fundo impresso
 
 ### Animações Melhoradas
 - **Animações GSAP** para modal com fade in/out suaves (0.3s)
