@@ -354,7 +354,7 @@ export function TVViewer() {
     const railRightX = Math.max(0, calibration.imageWidth - 1080);
     const cameraX = railLeftX + (railRightX - railLeftX) * (calibration.position / 100);
     // Garantir que a câmera não ultrapasse o limite para evitar fundo escuro
-    return Math.min(cameraX, railRightX * 0.768); // Limitar a 76.8% do railRightX
+    return Math.min(cameraX, railRightX); // Permitir movimento completo da imagem
   }, [calibration.position, calibration.imageWidth]);
 
   // Calcular o range máximo baseado na escala atual
@@ -367,8 +367,8 @@ export function TVViewer() {
     // Ajustar o range máximo baseado na escala para manter a imagem no viewport
     const scaleFactor = calibration.scale;
     const maxPos = Math.ceil((railWidth / 1080) * 100 * scaleFactor);
-    // Limitar para evitar que a imagem saia do viewport
-    const result = Math.min(76.8, maxPos);
+    // Permitir movimento completo da imagem
+    const result = maxPos;
     console.log('getMaxPosition:', { 
       imageWidth: calibration.imageWidth, 
       railWidth, 
@@ -376,8 +376,8 @@ export function TVViewer() {
       maxPos, 
       result 
     });
-    // Forçar um valor mínimo para teste
-    return Math.max(50, result);
+    // Retornar o valor calculado sem limitações artificiais
+    return result;
   }, [calibration.imageWidth, calibration.scale]);
 
   // Estado para suavização UDP (removido - usando atualização direta)
