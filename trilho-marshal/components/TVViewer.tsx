@@ -281,10 +281,10 @@ export function TVViewer() {
     }
   };
 
-  // Carregar posições dos bullets ao inicializar
-  useEffect(() => {
-    loadBulletPositions();
-  }, []);
+  // Carregar posições dos bullets ao inicializar - REMOVIDO: agora carregado em loadAllConfigurations()
+  // useEffect(() => {
+  //   loadBulletPositions();
+  // }, []);
 
   const [selectedZone, setSelectedZone] = useState<TargetZone | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
