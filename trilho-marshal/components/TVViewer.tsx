@@ -2,10 +2,14 @@
 
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { gsap } from 'gsap';
+import { Draggable } from 'gsap/Draggable';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { useUDPControl } from '@/hooks/useUDPControl';
 import FadeContent from './FadeContent';
+
+// Registrar o plugin Draggable
+gsap.registerPlugin(Draggable);
 
 interface CalibrationData {
   scale: number;
@@ -179,6 +183,9 @@ export function TVViewer() {
   // Estado do modal
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedBullet, setSelectedBullet] = useState<Bullet | null>(null);
+  const [isBackgroundLocked, setIsBackgroundLocked] = useState(false);
+  const [isUDPActive, setIsUDPActive] = useState(false);
+  const [selectedBulletForControl, setSelectedBulletForControl] = useState<Bullet | null>(null);
 
   // Função para carregar imagens de uma pasta específica
   const loadImagesFromFolder = (folder: string): string[] => {
@@ -191,6 +198,36 @@ export function TVViewer() {
     return allImages.map(file => `/imagens/${folder}/${file}`);
   };
 
+  // Função para ativar controle por teclas dos bullets
+  const enableBulletKeyboardControl = () => {
+    console.log('🎯 Ativando controle por teclas dos bullets...');
+    
+    // Adicionar classe para indicar que está em modo de controle
+    bullets.forEach((bullet, index) => {
+      const element = document.getElementById(`bullet-${bullet.id}`);
+      if (element) {
+        element.classList.add('keyboard-controlled');
+      }
+    });
+    
+    console.log('✅ Controle por teclas dos bullets ativado');
+  };
+
+  // Função para desativar controle por teclas dos bullets
+  const disableBulletKeyboardControl = () => {
+    console.log('🚫 Desativando controle por teclas dos bullets...');
+    
+    // Remover classe de controle
+    bullets.forEach((bullet, index) => {
+      const element = document.getElementById(`bullet-${bullet.id}`);
+      if (element) {
+        element.classList.remove('keyboard-controlled');
+      }
+    });
+    
+    console.log('✅ Controle por teclas dos bullets desativado');
+  };
+
   // Função para salvar posições dos bullets
   const saveBulletPositions = () => {
     localStorage.setItem('trilho-marshal-bullets', JSON.stringify(bullets));
@@ -199,10 +236,12 @@ export function TVViewer() {
 
   // Função para salvar todas as configurações (calibração + bullets)
   const saveAllConfigurations = () => {
-    const config = { 
+    const config = {
       calibration, 
       frames, 
       bullets,
+      isBackgroundLocked,
+      isUDPActive,
       timestamp: new Date().toISOString()
     };
     localStorage.setItem('trilho-marshal-config', JSON.stringify(config));
@@ -454,6 +493,23 @@ export function TVViewer() {
     showGrid: false,
   });
 
+  // Controlar controle por teclas dos bullets baseado no travamento
+  useEffect(() => {
+    if (isBackgroundLocked) {
+      enableBulletKeyboardControl();
+    } else {
+      disableBulletKeyboardControl();
+      setSelectedBulletForControl(null); // Limpar seleção ao destravar
+    }
+  }, [isBackgroundLocked]);
+
+  // Cleanup ao desmontar
+  useEffect(() => {
+    return () => {
+      disableBulletKeyboardControl();
+    };
+  }, []);
+
   // Carregar configurações automaticamente
   useEffect(() => {
     console.log('🔄 Iniciando carregamento de configurações...');
@@ -485,6 +541,18 @@ export function TVViewer() {
           }));
           setBullets(bulletsWithDefaults);
           console.log('✅ Bullets carregados:', bulletsWithDefaults);
+        }
+        
+        // Carregar estado de travamento
+        if (config.isBackgroundLocked !== undefined) {
+          setIsBackgroundLocked(config.isBackgroundLocked);
+          console.log('✅ Estado de travamento carregado:', config.isBackgroundLocked);
+        }
+        
+        // Carregar estado UDP
+        if (config.isUDPActive !== undefined) {
+          setIsUDPActive(config.isUDPActive);
+          console.log('✅ Estado UDP carregado:', config.isUDPActive);
         }
         
         console.log('🎉 Todas as configurações carregadas com sucesso!');
@@ -530,6 +598,21 @@ export function TVViewer() {
 
   // Função para clicar em um bullet
   const handleBulletClick = (bullet: Bullet) => {
+    // Se o background estiver travado, selecionar bullet para controle por teclas
+    if (isBackgroundLocked) {
+      const timestamp = new Date().toISOString();
+      console.log(`🎯 BULLET SELECIONADO [${timestamp}]:`, {
+        bulletId: bullet.id,
+        bulletLabel: bullet.label,
+        posicaoAtual: { x: bullet.x, y: bullet.y },
+        size: bullet.size,
+        color: bullet.color,
+        isBackgroundLocked: isBackgroundLocked
+      });
+      setSelectedBulletForControl(bullet);
+      return;
+    }
+    
     console.log('Bullet clicado:', bullet);
     setSelectedBullet(bullet);
     setIsModalOpen(true);
@@ -976,6 +1059,12 @@ export function TVViewer() {
     };
 
     const handleTouchStart = (e: TouchEvent) => {
+      // Se o background estiver travado, não processar toques
+      if (isBackgroundLocked) {
+        console.log('🔒 Background travado - toques desabilitados');
+        return;
+      }
+
       if (mode === 'operation') {
         if (e.touches.length === 1) {
           lastTouch = getTouchPoint(e.touches[0]);
@@ -998,6 +1087,12 @@ export function TVViewer() {
     };
 
     const handleTouchMove = (e: TouchEvent) => {
+      // Se o background estiver travado, não processar movimentos
+      if (isBackgroundLocked) {
+        console.log('🔒 Background travado - movimentos desabilitados');
+        return;
+      }
+
       e.preventDefault();
       
       // console.log('TouchMove:', { touches: e.touches.length, hasPinch: !!pinch });
@@ -1075,24 +1170,143 @@ export function TVViewer() {
       tv.removeEventListener('touchmove', handleTouchMove);
       tv.removeEventListener('touchend', handleTouchEnd);
     };
-  }, [mode, calibration.scale, calibration.position]);
+  }, [mode, calibration.scale, calibration.position, isBackgroundLocked]);
 
-  // Teclado
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key.toLowerCase() === 'c') {
-        setMode(prev => prev === 'calibration' ? 'operation' : 'calibration');
-      }
-      
-      if (e.key.toLowerCase() === 'r') {
-        // Reset para posição ideal
-        const resetCalibration = getIdealPosition();
-        setCalibration(resetCalibration);
-        console.log('🔄 Reset para posição ideal:', resetCalibration);
-      }
+      // Teclado
+      useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+          if (e.key.toLowerCase() === 'c') {
+            setMode(prev => prev === 'calibration' ? 'operation' : 'calibration');
+          }
+          
+          if (e.key.toLowerCase() === 'r') {
+            // Reset para posição ideal
+            const resetCalibration = getIdealPosition();
+            setCalibration(resetCalibration);
+            console.log('🔄 Reset para posição ideal:', resetCalibration);
+          }
+          
+          if (e.key.toLowerCase() === 't') {
+            // Toggle trava/destrava background
+            setIsBackgroundLocked(prev => {
+              const newState = !prev;
+              console.log(`🔒 Background ${newState ? 'travado' : 'destravado'}`);
+              return newState;
+            });
+          }
+          
+          if (e.key.toLowerCase() === 'p') {
+            // Toggle UDP ativo/inativo
+            setIsUDPActive(prev => {
+              const newState = !prev;
+              console.log(`📡 UDP ${newState ? 'ativado' : 'desativado'}`);
+              return newState;
+            });
+          }
 
-      // Controle de navegação horizontal com teclas O e P
-      if (e.key.toLowerCase() === 'o' || e.key.toLowerCase() === 'p') {
+        // Se estiver travado e tiver bullet selecionado, controlar bullet
+        if (isBackgroundLocked && selectedBulletForControl) {
+          const step = e.shiftKey ? 500 : 100; // Shift = movimento muito maior
+          let newX = selectedBulletForControl.x;
+          let newY = selectedBulletForControl.y;
+          
+          // Debug detalhado da tecla pressionada
+          const timestamp = new Date().toISOString();
+          console.log(`🔍 DEBUG TECLA [${timestamp}]:`, {
+            key: e.key,
+            shiftKey: e.shiftKey,
+            step: step,
+            bulletId: selectedBulletForControl.id,
+            posicaoAtual: { x: newX, y: newY },
+            bulletLabel: selectedBulletForControl.label
+          });
+          
+          switch (e.key) {
+            case 'ArrowUp':
+              e.preventDefault();
+              newY = newY - step; // Removido Math.max(0, ...) para permitir movimento livre
+              console.log(`⬆️ ARROW UP: ${selectedBulletForControl.y} → ${newY} (step: ${step})`);
+              break;
+            case 'ArrowDown':
+              e.preventDefault();
+              newY = newY + step;
+              console.log(`⬇️ ARROW DOWN: ${selectedBulletForControl.y} → ${newY} (step: ${step})`);
+              break;
+            case 'ArrowLeft':
+              e.preventDefault();
+              newX = newX - step; // Removido Math.max(0, ...) para permitir movimento livre
+              console.log(`⬅️ ARROW LEFT: ${selectedBulletForControl.x} → ${newX} (step: ${step})`);
+              break;
+            case 'ArrowRight':
+              e.preventDefault();
+              newX = newX + step;
+              console.log(`➡️ ARROW RIGHT: ${selectedBulletForControl.x} → ${newX} (step: ${step})`);
+              break;
+            case 'PageUp':
+              e.preventDefault();
+              newY = newY - (step * 5); // Movimento muito maior - sem limitação
+              console.log(`📄 PAGE UP: ${selectedBulletForControl.y} → ${newY} (step: ${step * 5})`);
+              break;
+            case 'PageDown':
+              e.preventDefault();
+              newY = newY + (step * 5);
+              console.log(`📄 PAGE DOWN: ${selectedBulletForControl.y} → ${newY} (step: ${step * 5})`);
+              break;
+            case 'Home':
+              e.preventDefault();
+              newX = newX - (step * 5); // Sem limitação
+              console.log(`🏠 HOME: ${selectedBulletForControl.x} → ${newX} (step: ${step * 5})`);
+              break;
+            case 'End':
+              e.preventDefault();
+              newX = newX + (step * 5);
+              console.log(`🏁 END: ${selectedBulletForControl.x} → ${newX} (step: ${step * 5})`);
+              break;
+            case 'Escape':
+              e.preventDefault();
+              setSelectedBulletForControl(null);
+              console.log('🎯 Controle do bullet cancelado');
+              return;
+            default:
+              return; // Não processar outras teclas
+          }
+          
+          // Debug antes da atualização
+          console.log(`🔄 ANTES DA ATUALIZAÇÃO:`, {
+            bulletId: selectedBulletForControl.id,
+            posicaoAnterior: { x: selectedBulletForControl.x, y: selectedBulletForControl.y },
+            novaPosicao: { x: newX, y: newY },
+            diferenca: { x: newX - selectedBulletForControl.x, y: newY - selectedBulletForControl.y }
+          });
+          
+          // Atualizar posição do bullet selecionado
+          setBullets(prev => {
+            const updatedBullets = prev.map(bullet => 
+              bullet.id === selectedBulletForControl.id 
+                ? { ...bullet, x: newX, y: newY }
+                : bullet
+            );
+            
+            // Debug após a atualização
+            const updatedBullet = updatedBullets.find(b => b.id === selectedBulletForControl.id);
+            console.log(`✅ APÓS ATUALIZAÇÃO:`, {
+              bulletId: selectedBulletForControl.id,
+              posicaoFinal: { x: updatedBullet?.x, y: updatedBullet?.y },
+              timestamp: new Date().toISOString()
+            });
+            
+            return updatedBullets;
+          });
+          
+          // CRÍTICO: Atualizar o selectedBulletForControl com a nova posição
+          setSelectedBulletForControl(prev => prev ? { ...prev, x: newX, y: newY } : null);
+          
+          console.log(`🎯 Bullet ${selectedBulletForControl.id} movido para:`, { x: newX, y: newY });
+          return;
+        }
+
+      // Controle de navegação horizontal com teclas O e P (só se não estiver travado)
+      if ((e.key.toLowerCase() === 'o' || e.key.toLowerCase() === 'p') && !isBackgroundLocked) {
         e.preventDefault();
         const step = 2; // Sensibilidade ajustada para fluidez
         const maxPos = getMaxPosition();
@@ -1106,7 +1320,7 @@ export function TVViewer() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [calibration.position, getMaxPosition]);
+  }, [calibration.position, getMaxPosition, isBackgroundLocked, selectedBulletForControl]);
 
 
   // Evento wheel global - mais confiável
@@ -1120,6 +1334,12 @@ export function TVViewer() {
         return; // Ignorar eventos fora da TV
       }
       
+      // Se o background estiver travado, não processar gestos
+      if (isBackgroundLocked) {
+        console.log('🔒 Background travado - gestos desabilitados');
+        return;
+      }
+      
       e.preventDefault();
       
       console.log('🎯 WHEEL EVENT:', { 
@@ -1127,7 +1347,8 @@ export function TVViewer() {
         ctrlKey: e.ctrlKey, 
         mode,
         currentPosition: calibration.position,
-        maxPos: getMaxPosition()
+        maxPos: getMaxPosition(),
+        isBackgroundLocked
       });
       
       // SEMPRE aplicar movimento horizontal com sensibilidade suavizada
@@ -1150,7 +1371,7 @@ export function TVViewer() {
     
     window.addEventListener('wheel', handleGlobalWheel, { passive: false });
     return () => window.removeEventListener('wheel', handleGlobalWheel);
-  }, [calibration.position, mode, getMaxPosition]);
+  }, [calibration.position, mode, getMaxPosition, isBackgroundLocked]);
 
   return (
     <>
@@ -1231,13 +1452,19 @@ export function TVViewer() {
                 <div
                   key={bullet.id}
                   id={`bullet-${bullet.id}`}
-                  className="absolute opacity-70 transition-all duration-300 pointer-events-auto cursor-pointer target-zone"
+                  className={`absolute opacity-70 transition-all duration-300 pointer-events-auto target-zone ${
+                    isBackgroundLocked ? 'cursor-pointer' : 'cursor-pointer'
+                  } ${
+                    selectedBulletForControl?.id === bullet.id ? 'ring-4 ring-yellow-400 ring-opacity-75' : ''
+                  }`}
                   style={{
-                    left: `${bullet.x - actualRadius}px`,
-                    top: `${bullet.y - actualRadius}px`,
+                    left: `${bullet.x}px`,
+                    top: `${bullet.y}px`,
                     width: `${actualRadius * 2}px`,
                     height: `${actualRadius * 2}px`,
                     zIndex: 20,
+                    transform: `translate(-50%, -50%)`, // Centralizar o bullet na posição
+                    position: 'absolute', // Garantir posicionamento absoluto
                   }}
                   onClick={() => handleBulletClick(bullet)}
                 >
@@ -1502,6 +1729,88 @@ export function TVViewer() {
             </div>
           </div>
 
+          {/* Controle UDP */}
+          <div className="mb-4 p-3 bg-gray-800 rounded-lg">
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-sm font-medium text-white">
+                📡 Controle UDP
+              </label>
+              <div className="flex items-center gap-2">
+                <div className={`w-2 h-2 rounded-full ${isUDPActive ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                <span className="text-xs text-gray-400">
+                  {isUDPActive ? 'Ativo' : 'Inativo'}
+                </span>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => {
+                  setIsUDPActive(!isUDPActive);
+                  console.log('📡 UDP ativado:', !isUDPActive);
+                }}
+                className={`px-3 py-1 text-xs rounded ${
+                  isUDPActive 
+                    ? 'bg-red-600 hover:bg-red-700 text-white' 
+                    : 'bg-green-600 hover:bg-green-700 text-white'
+                }`}
+              >
+                {isUDPActive ? '📡 Desativar UDP' : '📡 Ativar UDP'}
+              </button>
+              <span className="text-xs text-gray-400 flex items-center">
+                {isUDPActive ? 'Escutando porta 8888' : 'UDP desabilitado'}
+              </span>
+            </div>
+          </div>
+
+          {/* Controle de Travamento do Background */}
+          <div className="mb-4 p-3 bg-gray-800 rounded-lg">
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-sm font-medium text-white">
+                🔒 Travamento do Background
+              </label>
+              <div className="flex items-center gap-2">
+                <div className={`w-2 h-2 rounded-full ${isBackgroundLocked ? 'bg-red-500' : 'bg-green-500'}`}></div>
+                <span className="text-xs text-gray-400">
+                  {isBackgroundLocked ? 'Travado' : 'Livre'}
+                </span>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => {
+                  setIsBackgroundLocked(!isBackgroundLocked);
+                  console.log('🔒 Background travado:', !isBackgroundLocked);
+                }}
+                className={`px-3 py-1 text-xs rounded ${
+                  isBackgroundLocked 
+                    ? 'bg-red-600 hover:bg-red-700 text-white' 
+                    : 'bg-green-600 hover:bg-green-700 text-white'
+                }`}
+              >
+                {isBackgroundLocked ? '🔒 Destravar' : '🔓 Travar'}
+              </button>
+              <span className="text-xs text-gray-400 self-center">
+                {isBackgroundLocked ? 'Gestos desabilitados' : 'Gestos habilitados'}
+              </span>
+            </div>
+            <div className="mt-2 text-xs text-blue-400">
+              💡 Trave o background após configurar a posição ideal
+            </div>
+            {isBackgroundLocked && (
+              <div className="mt-2 text-xs text-yellow-400">
+                🎯 Clique em um bullet e use as teclas para mover
+                <div className="mt-1 text-xs text-gray-300">
+                  Setas: 100px | Shift+Setas: 500px | Page Up/Down: 2500px | Home/End: 2500px
+                </div>
+                {selectedBulletForControl && (
+                  <div className="mt-1 text-green-400">
+                    ✅ Controlando: {selectedBulletForControl.label} (ESC para cancelar)
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
           {/* Botões */}
           <div className="flex gap-2">
             <button
@@ -1710,7 +2019,7 @@ export function TVViewer() {
           
           {/* Dicas de teclado */}
           <div className="mt-4 text-xs text-gray-400">
-            <p>💡 <strong>Teclas:</strong> C = Alternar modos | R = Reset para posição ideal</p>
+            <p>💡 <strong>Teclas:</strong> C = Alternar modos | R = Reset | O/P = Navegar | T = Travar | P = UDP</p>
             <p>💡 <strong>Navegação:</strong> O/P = Movimento horizontal | Scroll trackpad = navegação horizontal</p>
             <p>💡 <strong>UDP:</strong> Envie valores 0-1 para porta 8888 (só em modo operação)</p>
             <p>💡 <strong>Persistência:</strong> Clique em "Salvar Posições" para salvar | "Limpar Tudo" para resetar</p>
