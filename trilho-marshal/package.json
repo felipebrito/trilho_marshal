@@ -7,13 +7,15 @@
     "build": "next build --turbopack",
     "start": "next start",
     "lint": "eslint",
+    "websocket-server": "node websocket-server.js",
     "udp-server": "node lib/udp-server.js",
     "test-udp": "node scripts/test-udp.js --interactive",
     "test-udp-auto": "node scripts/test-udp.js --test",
-    "install-setup": "npm install && echo '✅ Dependências instaladas! Execute: npm run dev'",
+    "start-all": "concurrently \"npm run websocket-server\" \"npm run dev\"",
+    "install-setup": "npm install && echo '✅ Dependências instaladas! Execute: npm run start-all'",
     "clean-install": "rm -rf node_modules package-lock.json && npm install",
     "reset-app": "echo '🗑️ Limpando localStorage...' && echo 'Abra o console do navegador e execute: localStorage.clear()'",
-    "help": "echo '📖 Scripts disponíveis:' && echo '  npm run dev          - Executar aplicação' && echo '  npm run udp-server   - Servidor UDP' && echo '  npm run test-udp     - Testar UDP' && echo '  npm run clean-install - Reinstalar dependências'"
+    "help": "echo '📖 Scripts disponíveis:' && echo '  npm run dev              - Executar aplicação' && echo '  npm run websocket-server - Servidor WebSocket (porta 8081)' && echo '  npm run udp-server       - Servidor UDP (porta 8888)' && echo '  npm run start-all        - Executar tudo (WebSocket + App)' && echo '  npm run test-udp         - Testar UDP' && echo '  npm run clean-install    - Reinstalar dependências'"
   },
   "dependencies": {
     "@radix-ui/react-checkbox": "^1.3.3",
@@ -37,6 +39,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "concurrently": "^8.2.2",
     "eslint": "^9",
     "eslint-config-next": "15.5.3",
     "tailwindcss": "^4",

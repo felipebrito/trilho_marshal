@@ -38,8 +38,21 @@ npm install
 
 ### 3. Executar a Aplicação
 
+#### Opção A: Execução Simples (Apenas a aplicação)
 ```bash
 npm run dev
+```
+
+#### Opção B: Execução Completa (Recomendado)
+```bash
+# Linux/Mac
+./start.sh
+
+# Windows
+start.bat
+
+# Ou usando npm
+npm run start-all
 ```
 
 A aplicação estará disponível em:
@@ -209,6 +222,23 @@ npm install
 - Pressione ESC para deselecionar
 
 ### WebSocket não conecta
+- **Erro**: `UDP Control: ❌ Erro WebSocket: {}`
+- **Solução**: Execute o servidor WebSocket primeiro:
+  ```bash
+  # Terminal 1: Servidor WebSocket
+  node websocket-server.js
+  
+  # Terminal 2: Aplicação Next.js
+  npm run dev
+  ```
+- **Alternativa**: Use o script de inicialização:
+  ```bash
+  # Linux/Mac
+  ./start.sh
+  
+  # Windows
+  start.bat
+  ```
 - Verifique se o servidor está rodando na porta 8081
 - Confirme que não há firewall bloqueando
 - Verifique os logs do servidor WebSocket
@@ -226,12 +256,27 @@ npm install
 ## 📝 Scripts Disponíveis
 
 ```bash
-npm run dev          # Executar aplicação Next.js
-npm run build        # Build para produção
-npm run start        # Executar build de produção
-node websocket-server.js  # Executar servidor WebSocket
-python test-udp.py   # Testar controle UDP
-python test-websocket.py  # Testar WebSocket
+# Execução da aplicação
+npm run dev              # Executar aplicação Next.js
+npm run start-all        # Executar tudo (WebSocket + UDP + Next.js)
+./start.sh               # Script de inicialização (Linux/Mac)
+start.bat                # Script de inicialização (Windows)
+
+# Servidores individuais
+npm run websocket-server # Servidor WebSocket (porta 8081)
+npm run udp-server       # Servidor UDP (porta 8888)
+
+# Build e produção
+npm run build            # Build para produção
+npm run start            # Executar build de produção
+
+# Testes
+python test-udp.py       # Testar controle UDP
+python test-websocket.py # Testar WebSocket
+
+# Utilitários
+npm run clean-install    # Reinstalar dependências
+npm run help             # Mostrar ajuda
 ```
 
 ## 🎨 Personalização
