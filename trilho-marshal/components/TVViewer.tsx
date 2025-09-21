@@ -51,6 +51,8 @@ interface Bullet {
 
 export function TVViewer() {
   console.log('🚀 TVViewer component carregado!');
+  
+  
   const [mode, setMode] = useState<'calibration' | 'operation'>('calibration');
   const [calibration, setCalibration] = useState<CalibrationData>({
     scale: 1.0,
@@ -200,11 +202,16 @@ export function TVViewer() {
   const [isBackgroundLocked, setIsBackgroundLocked] = useState(false);
   const [isUDPActive, setIsUDPActive] = useState(false);
   
+  // Estados para controles visuais
+  const [pulseSpeed, setPulseSpeed] = useState(1.5); // Velocidade de pulsação em segundos
+  const [isBlurEnabled, setIsBlurEnabled] = useState(true); // Controle do efeito blur
+  
   // Estado para controle de cliques e movimento
   const lastClickTime = useRef<number>(0);
   const lastPosition = useRef<number>(0);
   const movementTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isModalOpenRef = useRef<boolean>(false);
+  const lastModalCloseTime = useRef<number>(0);
 
   // Inicializar lastPosition quando o componente monta
   useEffect(() => {
@@ -263,15 +270,21 @@ export function TVViewer() {
   // Função simples para detectar movimento e fechar modal
   const checkMovementAndCloseModal = useCallback((newPosition: number) => {
     const positionDiff = Math.abs(newPosition - lastPosition.current);
-    const movementThreshold = 1.0; // Threshold baixo para detectar qualquer movimento
+    const movementThreshold = 0.05; // Threshold muito baixo para detectar pequenos movimentos
     const modalIsOpen = isModalOpenRef.current;
+    const now = Date.now();
+    const timeSinceLastClose = now - lastModalCloseTime.current;
+    const debounceTime = 500; // 500ms de debounce para evitar fechamentos múltiplos
     
-    console.log(`🔍 MOVIMENTO DEBUG: lastPosition=${lastPosition.current}, newPosition=${newPosition}, diff=${positionDiff}, isModalOpen=${modalIsOpen}, threshold=${movementThreshold}`);
+    console.log(`🔍 MOVIMENTO DEBUG: lastPosition=${lastPosition.current}, newPosition=${newPosition}, diff=${positionDiff}, isModalOpen=${modalIsOpen}, threshold=${movementThreshold}, timeSinceLastClose=${timeSinceLastClose}ms`);
     
     if (positionDiff > movementThreshold) {
-      if (modalIsOpen) {
+      if (modalIsOpen && timeSinceLastClose > debounceTime) {
         console.log(`🚀 MOVIMENTO DETECTADO: ${lastPosition.current} → ${newPosition} (diff: ${positionDiff}) - FECHANDO MODAL COM ANIMAÇÃO`);
+        lastModalCloseTime.current = now;
         closeModalWithAnimation();
+      } else if (modalIsOpen) {
+        console.log(`⏸️ Movimento detectado mas em debounce: diff=${positionDiff}, timeSinceLastClose=${timeSinceLastClose}ms`);
       } else {
         console.log(`⏸️ Movimento detectado mas modal já está fechado: diff=${positionDiff}, isModalOpen=${modalIsOpen}`);
       }
@@ -341,6 +354,8 @@ export function TVViewer() {
       mode, // Salvar modo atual
       selectedBulletForControl, // Salvar bullet selecionado para controle
       originalImageDimensions, // Salvar dimensões originais da imagem
+      pulseSpeed, // Salvar velocidade de pulsação
+      isBlurEnabled, // Salvar estado do blur
       timestamp: new Date().toISOString()
     };
     localStorage.setItem('trilho-marshal-config', JSON.stringify(config));
@@ -793,6 +808,18 @@ export function TVViewer() {
         if (config.originalImageDimensions) {
           setOriginalImageDimensions(config.originalImageDimensions);
           console.log('✅ Dimensões originais carregadas:', config.originalImageDimensions);
+        }
+        
+        // Carregar velocidade de pulsação
+        if (config.pulseSpeed !== undefined) {
+          setPulseSpeed(config.pulseSpeed);
+          console.log('✅ Velocidade de pulsação carregada:', config.pulseSpeed);
+        }
+        
+        // Carregar estado do blur
+        if (config.isBlurEnabled !== undefined) {
+          setIsBlurEnabled(config.isBlurEnabled);
+          console.log('✅ Estado do blur carregado:', config.isBlurEnabled);
         }
         
         console.log('🎉 Todas as configurações carregadas com sucesso!');
@@ -1326,6 +1353,15 @@ export function TVViewer() {
             // Salvar todas as configurações
             saveAllConfigurations();
           }
+          
+          if (e.key.toLowerCase() === 'b') {
+            // Toggle blur ativo/inativo
+            setIsBlurEnabled(prev => {
+              const newState = !prev;
+              console.log(`🌫️ Blur ${newState ? 'ativado' : 'desativado'}`);
+              return newState;
+            });
+          }
 
         // Se estiver travado e tiver bullet selecionado, controlar bullet
         if (isBackgroundLocked && selectedBulletForControl) {
@@ -1605,13 +1641,19 @@ export function TVViewer() {
 
           {/* Bullets - Pontos Pulsantes */}
           <div id="bullets" className="absolute inset-0 pointer-events-auto">
-            {bullets.map(bullet => {
+            {bullets.map((bullet, index) => {
               const actualRadius = bullet.radius * bullet.size;
+              // Gerar delay único para cada bullet baseado no ID e posição
+              const bulletIdNumber = parseInt(bullet.id.replace('B', '')) || index;
+              const delayMultiplier = (bulletIdNumber * 0.3) % 2; // Ciclo de 0 a 2 segundos
+              const glowDelay = delayMultiplier;
+              const bulletDelay = delayMultiplier * 0.7; // Delay ligeiramente diferente para o bullet
+              
               return (
                 <div
                   key={bullet.id}
                   id={`bullet-${bullet.id}`}
-                  className={`absolute opacity-70 transition-all duration-300 pointer-events-auto target-zone ${
+                  className={`absolute transition-all duration-300 pointer-events-auto target-zone ${
                     isBackgroundLocked ? 'cursor-pointer' : 'cursor-pointer'
                   } ${
                     selectedBulletForControl?.id === bullet.id ? 'ring-4 ring-yellow-400 ring-opacity-75' : ''
@@ -1627,19 +1669,57 @@ export function TVViewer() {
                   }}
                   onClick={() => handleBulletClick(bullet)}
                 >
+                  {/* Simple glow ring */}
                   <div 
-                    className="w-full h-full rounded-full animate-pulse border-2 border-white/70 shadow-lg flex items-center justify-center"
+                    className="absolute inset-0 rounded-full"
                     style={{
-                      background: `linear-gradient(135deg, ${bullet.color}, ${bullet.color}dd)`,
+                      background: `radial-gradient(circle, ${bullet.color}20 0%, transparent 70%)`,
+                      transform: `scale(${bullet.size * 1.5})`,
+                      transformOrigin: 'center',
+                      animationName: 'pulse',
+                      animationDuration: `${pulseSpeed * 1.3}s`,
+                      animationTimingFunction: 'ease-in-out',
+                      animationIterationCount: 'infinite',
+                      animationDelay: `${glowDelay}s`, // Delay único para cada bullet
+                    }}
+                  />
+                  
+                  {/* Main bullet with glass effect */}
+                  <div 
+                    className="w-full h-full rounded-full flex items-center justify-center relative overflow-hidden"
+                    style={{
+                      background: `linear-gradient(135deg, ${bullet.color}cc, ${bullet.color}99)`,
+                      backdropFilter: isBlurEnabled ? 'blur(8px)' : 'none',
+                      border: `2px solid ${bullet.color}aa`,
+                      boxShadow: `0 4px 12px ${bullet.color}40`,
                       transform: `scale(${bullet.size})`,
                       transformOrigin: 'center',
+                      opacity: 0.9,
+                      animationName: 'pulse',
+                      animationDuration: `${pulseSpeed}s`,
+                      animationTimingFunction: 'ease-in-out',
+                      animationIterationCount: 'infinite',
+                      animationDirection: 'alternate',
+                      animationDelay: `${bulletDelay}s`, // Delay único para cada bullet
                     }}
                   >
+                    {/* Glass highlight */}
                     <div 
-                      className="text-white font-bold"
+                      className="absolute top-0 left-0 w-full h-1/2 rounded-t-full"
                       style={{
-                        fontSize: `${120 / bullet.size}px`,
-                        transform: `scale(${1 / bullet.size})`,
+                        background: `linear-gradient(to bottom, rgba(255,255,255,0.3), transparent)`,
+                      }}
+                    />
+                    
+                    {/* Lettering with corrected proportional sizing */}
+                    <div 
+                      className="text-white font-bold relative z-10 select-none"
+                      style={{
+                        fontSize: bullet.label === 'FUTURO' ? '28px' : `${Math.max(12, 24 * bullet.size)}px`,
+                        textShadow: 'rgba(0, 0, 0, 0.8) 0px 2px 4px',
+                        fontWeight: '800',
+                        letterSpacing: '-0.05em',
+                        textTransform: 'uppercase',
                       }}
                     >
                       {bullet.label}
@@ -2165,6 +2245,52 @@ export function TVViewer() {
                     className="px-3 py-1 bg-pink-600 hover:bg-pink-700 text-white rounded text-xs"
                   >
                     Cores Aleatórias
+                  </button>
+                </div>
+
+                {/* Controle de Velocidade de Pulsação */}
+                <div>
+                  <label className="text-xs text-gray-300 block mb-1">
+                    Velocidade de Pulsação: {pulseSpeed}s
+                  </label>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setPulseSpeed(0.5)}
+                      className={`px-2 py-1 rounded text-xs ${pulseSpeed === 0.5 ? 'bg-blue-600' : 'bg-gray-600 hover:bg-gray-700'} text-white`}
+                    >
+                      Rápido (0.5s)
+                    </button>
+                    <button
+                      onClick={() => setPulseSpeed(1.0)}
+                      className={`px-2 py-1 rounded text-xs ${pulseSpeed === 1.0 ? 'bg-blue-600' : 'bg-gray-600 hover:bg-gray-700'} text-white`}
+                    >
+                      Normal (1.0s)
+                    </button>
+                    <button
+                      onClick={() => setPulseSpeed(1.5)}
+                      className={`px-2 py-1 rounded text-xs ${pulseSpeed === 1.5 ? 'bg-blue-600' : 'bg-gray-600 hover:bg-gray-700'} text-white`}
+                    >
+                      Lento (1.5s)
+                    </button>
+                    <button
+                      onClick={() => setPulseSpeed(2.0)}
+                      className={`px-2 py-1 rounded text-xs ${pulseSpeed === 2.0 ? 'bg-blue-600' : 'bg-gray-600 hover:bg-gray-700'} text-white`}
+                    >
+                      Muito Lento (2.0s)
+                    </button>
+                  </div>
+                </div>
+
+                {/* Controle de Blur */}
+                <div>
+                  <label className="text-xs text-gray-300 block mb-1">
+                    Efeito Blur: {isBlurEnabled ? 'Ativado' : 'Desativado'} (Tecla B)
+                  </label>
+                  <button
+                    onClick={() => setIsBlurEnabled(!isBlurEnabled)}
+                    className={`px-3 py-1 rounded text-xs ${isBlurEnabled ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'} text-white`}
+                  >
+                    {isBlurEnabled ? 'Desativar Blur' : 'Ativar Blur'}
                   </button>
                 </div>
               </div>
