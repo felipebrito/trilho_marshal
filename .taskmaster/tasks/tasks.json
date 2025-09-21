@@ -219,11 +219,77 @@
         },
         {
           "id": "20",
+          "title": "Implementar persistência de dados em arquivos JSON no servidor",
+          "description": "Criar sistema de persistência de dados no servidor com APIs de save/load",
+          "status": "done",
+          "priority": "high",
+          "dependencies": ["8"],
+          "details": "Implementar APIs /api/save-data e /api/load-data para salvar/carregar configurações no servidor, incluindo posições dos bullets, calibração e estados da aplicação",
+          "testStrategy": "Testar salvamento e carregamento de dados no servidor, verificar fallback para localStorage",
+          "subtasks": []
+        },
+        {
+          "id": "21",
+          "title": "Implementar controle de blur com tecla B e botão na interface",
+          "description": "Adicionar controle de blur que pode ser ativado/desativado via tecla B ou botão",
+          "status": "done",
+          "priority": "medium",
+          "dependencies": ["14"],
+          "details": "Implementar controle de blur que afeta GradualBlur nas laterais, backdrop-blur em elementos da interface, info display, painel de calibração, modal overlay e bullets",
+          "testStrategy": "Testar tecla B e botão para alternar blur, verificar se todos os elementos são afetados corretamente",
+          "subtasks": []
+        },
+        {
+          "id": "22",
+          "title": "Melhorar controles de calibração com botões +/- e entrada numérica",
+          "description": "Adicionar botões +/- e campos de entrada numérica para todos os sliders de calibração",
+          "status": "done",
+          "priority": "medium",
+          "dependencies": ["7"],
+          "details": "Implementar botões +/- e campos de entrada numérica para escala, posição, offset X/Y, largura e altura da imagem, com validação de valores",
+          "testStrategy": "Testar botões +/- e entrada numérica em todos os controles, verificar validação de valores",
+          "subtasks": []
+        },
+        {
+          "id": "23",
+          "title": "Implementar funcionalidades de export/import de configuração",
+          "description": "Criar sistema para exportar e importar configurações em formato JSON",
+          "status": "done",
+          "priority": "medium",
+          "dependencies": ["20"],
+          "details": "Implementar APIs /api/export-config e /api/import-config para exportar/importar configurações, com botões na interface e download automático de arquivo JSON",
+          "testStrategy": "Testar export/import de configurações, verificar se arquivo JSON é gerado corretamente e pode ser importado",
+          "subtasks": []
+        },
+        {
+          "id": "24",
+          "title": "Implementar salvamento com tecla S incluindo posição dos bullets",
+          "description": "Adicionar funcionalidade de salvamento completo com tecla S",
+          "status": "done",
+          "priority": "high",
+          "dependencies": ["20"],
+          "details": "Implementar salvamento completo com tecla S que inclui posições dos bullets, configurações de calibração, estados da aplicação e timestamp",
+          "testStrategy": "Testar tecla S para salvamento, verificar se todos os dados são salvos corretamente",
+          "subtasks": []
+        },
+        {
+          "id": "25",
+          "title": "Remover botão fechar do modal e implementar fechamento ao clicar na imagem",
+          "description": "Modificar modal para fechar ao clicar na imagem em vez de ter botão fechar",
+          "status": "done",
+          "priority": "medium",
+          "dependencies": ["14"],
+          "details": "Remover botão X do modal e implementar fechamento ao clicar em qualquer lugar da imagem ou overlay",
+          "testStrategy": "Testar fechamento do modal ao clicar na imagem e overlay, verificar se não há botão fechar",
+          "subtasks": []
+        },
+        {
+          "id": "26",
           "title": "Configurar build de produção e deploy",
           "description": "Preparar aplicação para produção e deploy",
           "status": "pending",
           "priority": "medium",
-          "dependencies": ["19"],
+          "dependencies": ["25"],
           "details": "Configurar build otimizado, deploy e testes em dispositivos reais",
           "testStrategy": "Testar build de produção e deploy em ambiente real",
           "subtasks": []

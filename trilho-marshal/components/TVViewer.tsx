@@ -53,7 +53,7 @@ export function TVViewer() {
   console.log('🚀 TVViewer component carregado!');
   
   
-  const [mode, setMode] = useState<'calibration' | 'operation'>('operation');
+  const [mode, setMode] = useState<'calibration' | 'operation'>('calibration');
   const [calibration, setCalibration] = useState<CalibrationData>({
     scale: 1.0,
     offsetX: 0,
@@ -344,7 +344,7 @@ export function TVViewer() {
   };
 
   // Função para salvar todas as configurações (calibração + bullets)
-  const saveAllConfigurations = () => {
+  const saveAllConfigurations = async () => {
     const config = {
       calibration, 
       frames, 
@@ -358,20 +358,111 @@ export function TVViewer() {
       isBlurEnabled, // Salvar estado do blur
       timestamp: new Date().toISOString()
     };
-    localStorage.setItem('trilho-marshal-config', JSON.stringify(config));
-    console.log('💾 Configurações salvas manualmente:', config);
-    console.log('📐 Dimensões da imagem sendo salvas:', {
-      imageWidth: calibration.imageWidth,
-      imageHeight: calibration.imageHeight
-    });
-    console.log('🎯 Estado completo salvo:', {
-      mode,
-      isBackgroundLocked,
-      isUDPActive,
-      bulletsCount: bullets.length,
-      selectedBullet: selectedBulletForControl?.id,
-    });
-    alert('✅ Configurações salvas com sucesso!');
+    
+    try {
+      // Tentar salvar no servidor primeiro
+      const response = await fetch('/api/save-data', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(config),
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        console.log('💾 Configurações salvas no servidor:', result);
+        console.log('📐 Dimensões da imagem sendo salvas:', {
+          imageWidth: calibration.imageWidth,
+          imageHeight: calibration.imageHeight
+        });
+        console.log('🎯 Estado completo salvo:', {
+          mode,
+          isBackgroundLocked,
+          isUDPActive,
+          bulletsCount: bullets.length,
+          selectedBullet: selectedBulletForControl?.id,
+        });
+        alert('✅ Configurações salvas no servidor com sucesso!');
+      } else {
+        throw new Error('Erro ao salvar no servidor');
+      }
+    } catch (error) {
+      console.warn('⚠️ Erro ao salvar no servidor, usando localStorage:', error);
+      // Fallback para localStorage
+      localStorage.setItem('trilho-marshal-config', JSON.stringify(config));
+      console.log('💾 Configurações salvas no localStorage:', config);
+      console.log('📐 Dimensões da imagem sendo salvas:', {
+        imageWidth: calibration.imageWidth,
+        imageHeight: calibration.imageHeight
+      });
+      console.log('🎯 Estado completo salvo:', {
+        mode,
+        isBackgroundLocked,
+        isUDPActive,
+        bulletsCount: bullets.length,
+        selectedBullet: selectedBulletForControl?.id,
+      });
+      alert('⚠️ Configurações salvas localmente (servidor indisponível)');
+    }
+  };
+
+  // Função para carregar todas as configurações
+  const loadAllConfigurations = async () => {
+    try {
+      // Tentar carregar do servidor primeiro
+      const response = await fetch('/api/load-data');
+      
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.data) {
+          const config = result.data;
+          console.log('📂 Configurações carregadas do servidor:', config);
+          
+          // Aplicar configurações
+          if (config.calibration) setCalibration(config.calibration);
+          if (config.frames) setFrames(config.frames);
+          if (config.bullets) setBullets(config.bullets);
+          if (config.mode) setMode(config.mode);
+          if (typeof config.isBackgroundLocked === 'boolean') setIsBackgroundLocked(config.isBackgroundLocked);
+          if (typeof config.isUDPActive === 'boolean') setIsUDPActive(config.isUDPActive);
+          if (config.originalImageDimensions) setOriginalImageDimensions(config.originalImageDimensions);
+          if (config.pulseSpeed) setPulseSpeed(config.pulseSpeed);
+          if (typeof config.isBlurEnabled === 'boolean') setIsBlurEnabled(config.isBlurEnabled);
+          if (config.selectedBulletForControl) setSelectedBulletForControl(config.selectedBulletForControl);
+          
+          alert('✅ Configurações carregadas do servidor com sucesso!');
+          return;
+        }
+      }
+      
+      throw new Error('Nenhum dado encontrado no servidor');
+    } catch (error) {
+      console.warn('⚠️ Erro ao carregar do servidor, tentando localStorage:', error);
+      
+      // Fallback para localStorage
+      const savedConfig = localStorage.getItem('trilho-marshal-config');
+      if (savedConfig) {
+        const config = JSON.parse(savedConfig);
+        console.log('📂 Configurações carregadas do localStorage:', config);
+        
+        // Aplicar configurações
+        if (config.calibration) setCalibration(config.calibration);
+        if (config.frames) setFrames(config.frames);
+        if (config.bullets) setBullets(config.bullets);
+        if (config.mode) setMode(config.mode);
+        if (typeof config.isBackgroundLocked === 'boolean') setIsBackgroundLocked(config.isBackgroundLocked);
+        if (typeof config.isUDPActive === 'boolean') setIsUDPActive(config.isUDPActive);
+        if (config.originalImageDimensions) setOriginalImageDimensions(config.originalImageDimensions);
+        if (config.pulseSpeed) setPulseSpeed(config.pulseSpeed);
+        if (typeof config.isBlurEnabled === 'boolean') setIsBlurEnabled(config.isBlurEnabled);
+        if (config.selectedBulletForControl) setSelectedBulletForControl(config.selectedBulletForControl);
+        
+        alert('⚠️ Configurações carregadas localmente (servidor indisponível)');
+      } else {
+        alert('❌ Nenhuma configuração encontrada!');
+      }
+    }
   };
 
   // Função para limpar todas as configurações
@@ -404,6 +495,85 @@ export function TVViewer() {
         console.error('Erro ao carregar posições dos bullets:', error);
       }
     }
+  };
+
+  // Função para exportar configuração como JSON
+  const exportConfig = async () => {
+    try {
+      const response = await fetch('/api/export-config');
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.data) {
+          // Criar e baixar arquivo JSON
+          const dataStr = JSON.stringify(result.data, null, 2);
+          const dataBlob = new Blob([dataStr], { type: 'application/json' });
+          const url = URL.createObjectURL(dataBlob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = `trilho-marshal-config-${new Date().toISOString().split('T')[0]}.json`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(url);
+          alert('✅ Configuração exportada com sucesso!');
+        } else {
+          throw new Error('Erro ao exportar configuração');
+        }
+      } else {
+        throw new Error('Erro ao exportar configuração');
+      }
+    } catch (error) {
+      console.error('❌ Erro ao exportar configuração:', error);
+      alert('❌ Erro ao exportar configuração');
+    }
+  };
+
+  // Função para importar configuração de JSON
+  const importConfig = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (file) {
+        try {
+          const text = await file.text();
+          const data = JSON.parse(text);
+          
+          // Validar se os dados contêm as propriedades necessárias
+          const requiredFields = ['calibration', 'frames', 'bullets'];
+          const missingFields = requiredFields.filter(field => !(field in data));
+          
+          if (missingFields.length > 0) {
+            alert(`❌ Arquivo inválido: campos obrigatórios ausentes: ${missingFields.join(', ')}`);
+            return;
+          }
+          
+          // Enviar para o servidor
+          const response = await fetch('/api/import-config', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data),
+          });
+          
+          if (response.ok) {
+            const result = await response.json();
+            console.log('📥 Configuração importada:', result);
+            
+            // Recarregar a página para aplicar as configurações
+            window.location.reload();
+          } else {
+            throw new Error('Erro ao importar configuração');
+          }
+        } catch (error) {
+          console.error('❌ Erro ao importar configuração:', error);
+          alert('❌ Erro ao importar configuração');
+        }
+      }
+    };
+    input.click();
   };
 
   // Carregar posições dos bullets ao inicializar - REMOVIDO: agora carregado em loadAllConfigurations()
@@ -1564,27 +1734,31 @@ export function TVViewer() {
       <div id="tv" className="relative w-full h-full border-4 border-gray-600 rounded-xl overflow-hidden bg-gray-900">
         
         {/* Gradual Blur nas laterais para efeito de lupa horizontal */}
-        <GradualBlur
-          position="left"
-          width="8rem"
-          strength={3}
-          divCount={8}
-          curve="bezier"
-          exponential={true}
-          opacity={0.8}
-          preset="intense"
-        />
-        
-        <GradualBlur
-          position="right"
-          width="8rem"
-          strength={3}
-          divCount={8}
-          curve="bezier"
-          exponential={true}
-          opacity={0.8}
-          preset="intense"
-        />
+        {isBlurEnabled && (
+          <>
+            <GradualBlur
+              position="left"
+              width="8rem"
+              strength={3}
+              divCount={8}
+              curve="bezier"
+              exponential={true}
+              opacity={0.8}
+              preset="intense"
+            />
+            
+            <GradualBlur
+              position="right"
+              width="8rem"
+              strength={3}
+              divCount={8}
+              curve="bezier"
+              exponential={true}
+              opacity={0.8}
+              preset="intense"
+            />
+          </>
+        )}
         
         {/* World Container */}
         <div 
@@ -1763,7 +1937,7 @@ export function TVViewer() {
 
         {/* Info Display - só aparece em modo calibração */}
         {mode === 'calibration' && (
-          <div className="absolute left-4 top-4 px-3 py-2 bg-black/60 border border-gray-600 rounded-full text-white text-sm backdrop-blur-sm z-10">
+          <div className={`absolute left-4 top-4 px-3 py-2 bg-black/60 border border-gray-600 rounded-full text-white text-sm z-10 ${isBlurEnabled ? 'backdrop-blur-sm' : ''}`}>
             {calibration.imageWidth}×{calibration.imageHeight} • escala {Math.round(calibration.scale * 100)}% • pos {calibration.position.toFixed(1)}% • off {calibration.offsetX} / {calibration.offsetY}
           </div>
         )}
@@ -1773,7 +1947,7 @@ export function TVViewer() {
 
       {/* Calibration Panel */}
       {mode === 'calibration' && (
-        <div className="absolute top-20 left-4 w-80 bg-black/80 border border-gray-600 rounded-lg p-4 backdrop-blur-sm z-20">
+        <div className={`absolute top-20 left-4 w-80 bg-black/80 border border-gray-600 rounded-lg p-4 z-20 ${isBlurEnabled ? 'backdrop-blur-sm' : ''}`}>
           <h3 className="text-white text-lg font-bold mb-4">Calibração</h3>
           
           {/* Escala */}
@@ -1781,15 +1955,47 @@ export function TVViewer() {
             <label className="block text-sm font-medium text-white mb-2">
               Escala: {Math.round(calibration.scale * 100)}%
             </label>
-            <input
-              type="range"
-              min="0"
-              max="200"
-              step="1"
-              value={calibration.scale * 100}
-              onChange={(e) => handleCalibrationChange({ scale: parseFloat(e.target.value) / 100 })}
-              className="w-full"
-            />
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => {
+                  const newScale = Math.max(0, calibration.scale - 0.01);
+                  handleCalibrationChange({ scale: newScale });
+                }}
+                className="px-2 py-1 bg-gray-600 hover:bg-gray-700 text-white rounded text-sm"
+              >
+                -
+              </button>
+              <input
+                type="range"
+                min="0"
+                max="200"
+                step="1"
+                value={calibration.scale * 100}
+                onChange={(e) => handleCalibrationChange({ scale: parseFloat(e.target.value) / 100 })}
+                className="flex-1"
+              />
+              <button
+                onClick={() => {
+                  const newScale = Math.min(2, calibration.scale + 0.01);
+                  handleCalibrationChange({ scale: newScale });
+                }}
+                className="px-2 py-1 bg-gray-600 hover:bg-gray-700 text-white rounded text-sm"
+              >
+                +
+              </button>
+              <input
+                type="number"
+                min="0"
+                max="200"
+                step="1"
+                className="w-16 px-2 py-1 bg-gray-700 text-white text-sm rounded border border-gray-600"
+                value={Math.round(calibration.scale * 100)}
+                onChange={(e) => {
+                  const newScale = Math.max(0, Math.min(2, parseInt(e.target.value) / 100));
+                  handleCalibrationChange({ scale: newScale });
+                }}
+              />
+            </div>
           </div>
 
           {/* Posição */}
@@ -1797,15 +2003,47 @@ export function TVViewer() {
             <label className="block text-sm font-medium text-white mb-2">
               Posição: {Math.round(calibration.position)}% / {getMaxPosition()}%
             </label>
-            <input
-              type="range"
-              min="0"
-              max="100"
-              step="1"
-              value={calibration.position}
-              onChange={(e) => handleCalibrationChange({ position: parseFloat(e.target.value) })}
-              className="w-full"
-            />
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => {
+                  const newPosition = Math.max(0, calibration.position - 1);
+                  handleCalibrationChange({ position: newPosition });
+                }}
+                className="px-2 py-1 bg-gray-600 hover:bg-gray-700 text-white rounded text-sm"
+              >
+                -
+              </button>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                step="1"
+                value={calibration.position}
+                onChange={(e) => handleCalibrationChange({ position: parseFloat(e.target.value) })}
+                className="flex-1"
+              />
+              <button
+                onClick={() => {
+                  const newPosition = Math.min(100, calibration.position + 1);
+                  handleCalibrationChange({ position: newPosition });
+                }}
+                className="px-2 py-1 bg-gray-600 hover:bg-gray-700 text-white rounded text-sm"
+              >
+                +
+              </button>
+              <input
+                type="number"
+                min="0"
+                max="100"
+                step="1"
+                className="w-16 px-2 py-1 bg-gray-700 text-white text-sm rounded border border-gray-600"
+                value={Math.round(calibration.position)}
+                onChange={(e) => {
+                  const newPosition = Math.max(0, Math.min(100, parseFloat(e.target.value)));
+                  handleCalibrationChange({ position: newPosition });
+                }}
+              />
+            </div>
             <p className="text-xs text-gray-400 mt-1">
               💡 Use scroll horizontal no touchpad (0-100%)
             </p>
@@ -1816,15 +2054,47 @@ export function TVViewer() {
             <label className="block text-sm font-medium text-white mb-2">
               Offset X: {calibration.offsetX}px
             </label>
-            <input
-              type="range"
-              min="-2000"
-              max="2000"
-              step="10"
-              value={calibration.offsetX}
-              onChange={(e) => handleCalibrationChange({ offsetX: parseInt(e.target.value) })}
-              className="w-full"
-            />
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => {
+                  const newOffsetX = Math.max(-2000, calibration.offsetX - 10);
+                  handleCalibrationChange({ offsetX: newOffsetX });
+                }}
+                className="px-2 py-1 bg-gray-600 hover:bg-gray-700 text-white rounded text-sm"
+              >
+                -
+              </button>
+              <input
+                type="range"
+                min="-2000"
+                max="2000"
+                step="10"
+                value={calibration.offsetX}
+                onChange={(e) => handleCalibrationChange({ offsetX: parseInt(e.target.value) })}
+                className="flex-1"
+              />
+              <button
+                onClick={() => {
+                  const newOffsetX = Math.min(2000, calibration.offsetX + 10);
+                  handleCalibrationChange({ offsetX: newOffsetX });
+                }}
+                className="px-2 py-1 bg-gray-600 hover:bg-gray-700 text-white rounded text-sm"
+              >
+                +
+              </button>
+              <input
+                type="number"
+                min="-2000"
+                max="2000"
+                step="10"
+                className="w-20 px-2 py-1 bg-gray-700 text-white text-sm rounded border border-gray-600"
+                value={calibration.offsetX}
+                onChange={(e) => {
+                  const newOffsetX = Math.max(-2000, Math.min(2000, parseInt(e.target.value)));
+                  handleCalibrationChange({ offsetX: newOffsetX });
+                }}
+              />
+            </div>
           </div>
 
           {/* Offset Y */}
@@ -1832,15 +2102,47 @@ export function TVViewer() {
             <label className="block text-sm font-medium text-white mb-2">
               Offset Y: {calibration.offsetY}px
             </label>
-            <input
-              type="range"
-              min="-2000"
-              max="2000"
-              step="10"
-              value={calibration.offsetY}
-              onChange={(e) => handleCalibrationChange({ offsetY: parseInt(e.target.value) })}
-              className="w-full"
-            />
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => {
+                  const newOffsetY = Math.max(-2000, calibration.offsetY - 10);
+                  handleCalibrationChange({ offsetY: newOffsetY });
+                }}
+                className="px-2 py-1 bg-gray-600 hover:bg-gray-700 text-white rounded text-sm"
+              >
+                -
+              </button>
+              <input
+                type="range"
+                min="-2000"
+                max="2000"
+                step="10"
+                value={calibration.offsetY}
+                onChange={(e) => handleCalibrationChange({ offsetY: parseInt(e.target.value) })}
+                className="flex-1"
+              />
+              <button
+                onClick={() => {
+                  const newOffsetY = Math.min(2000, calibration.offsetY + 10);
+                  handleCalibrationChange({ offsetY: newOffsetY });
+                }}
+                className="px-2 py-1 bg-gray-600 hover:bg-gray-700 text-white rounded text-sm"
+              >
+                +
+              </button>
+              <input
+                type="number"
+                min="-2000"
+                max="2000"
+                step="10"
+                className="w-20 px-2 py-1 bg-gray-700 text-white text-sm rounded border border-gray-600"
+                value={calibration.offsetY}
+                onChange={(e) => {
+                  const newOffsetY = Math.max(-2000, Math.min(2000, parseInt(e.target.value)));
+                  handleCalibrationChange({ offsetY: newOffsetY });
+                }}
+              />
+            </div>
           </div>
 
           {/* Dimensões da Imagem */}
@@ -1852,15 +2154,47 @@ export function TVViewer() {
               <label className="block text-sm font-medium text-white mb-2">
                 Largura: {calibration.imageWidth}px
               </label>
-              <input
-                type="range"
-                min="5000"
-                max="50000"
-                step="100"
-                value={calibration.imageWidth}
-                onChange={(e) => handleCalibrationChange({ imageWidth: parseInt(e.target.value) })}
-                className="w-full"
-              />
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    const newWidth = Math.max(5000, calibration.imageWidth - 100);
+                    handleCalibrationChange({ imageWidth: newWidth });
+                  }}
+                  className="px-2 py-1 bg-gray-600 hover:bg-gray-700 text-white rounded text-sm"
+                >
+                  -
+                </button>
+                <input
+                  type="range"
+                  min="5000"
+                  max="50000"
+                  step="100"
+                  value={calibration.imageWidth}
+                  onChange={(e) => handleCalibrationChange({ imageWidth: parseInt(e.target.value) })}
+                  className="flex-1"
+                />
+                <button
+                  onClick={() => {
+                    const newWidth = Math.min(50000, calibration.imageWidth + 100);
+                    handleCalibrationChange({ imageWidth: newWidth });
+                  }}
+                  className="px-2 py-1 bg-gray-600 hover:bg-gray-700 text-white rounded text-sm"
+                >
+                  +
+                </button>
+                <input
+                  type="number"
+                  min="5000"
+                  max="50000"
+                  step="100"
+                  className="w-20 px-2 py-1 bg-gray-700 text-white text-sm rounded border border-gray-600"
+                  value={calibration.imageWidth}
+                  onChange={(e) => {
+                    const newWidth = Math.max(5000, Math.min(50000, parseInt(e.target.value)));
+                    handleCalibrationChange({ imageWidth: newWidth });
+                  }}
+                />
+              </div>
               <p className="text-xs text-gray-400 mt-1">
                 💡 Ajuste a largura total da imagem de fundo
               </p>
@@ -1871,15 +2205,47 @@ export function TVViewer() {
               <label className="block text-sm font-medium text-white mb-2">
                 Altura: {calibration.imageHeight}px
               </label>
-              <input
-                type="range"
-                min="1000"
-                max="10000"
-                step="50"
-                value={calibration.imageHeight}
-                onChange={(e) => handleCalibrationChange({ imageHeight: parseInt(e.target.value) })}
-                className="w-full"
-              />
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    const newHeight = Math.max(1000, calibration.imageHeight - 50);
+                    handleCalibrationChange({ imageHeight: newHeight });
+                  }}
+                  className="px-2 py-1 bg-gray-600 hover:bg-gray-700 text-white rounded text-sm"
+                >
+                  -
+                </button>
+                <input
+                  type="range"
+                  min="1000"
+                  max="10000"
+                  step="50"
+                  value={calibration.imageHeight}
+                  onChange={(e) => handleCalibrationChange({ imageHeight: parseInt(e.target.value) })}
+                  className="flex-1"
+                />
+                <button
+                  onClick={() => {
+                    const newHeight = Math.min(10000, calibration.imageHeight + 50);
+                    handleCalibrationChange({ imageHeight: newHeight });
+                  }}
+                  className="px-2 py-1 bg-gray-600 hover:bg-gray-700 text-white rounded text-sm"
+                >
+                  +
+                </button>
+                <input
+                  type="number"
+                  min="1000"
+                  max="10000"
+                  step="50"
+                  className="w-20 px-2 py-1 bg-gray-700 text-white text-sm rounded border border-gray-600"
+                  value={calibration.imageHeight}
+                  onChange={(e) => {
+                    const newHeight = Math.max(1000, Math.min(10000, parseInt(e.target.value)));
+                    handleCalibrationChange({ imageHeight: newHeight });
+                  }}
+                />
+              </div>
               <p className="text-xs text-gray-400 mt-1">
                 💡 Ajuste a altura total da imagem de fundo
               </p>
@@ -2154,7 +2520,25 @@ export function TVViewer() {
               onClick={saveAllConfigurations}
               className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm"
             >
-              Salvar Posições
+              Salvar no Servidor (S)
+            </button>
+            <button
+              onClick={loadAllConfigurations}
+              className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded text-sm"
+            >
+              Carregar do Servidor
+            </button>
+            <button
+              onClick={exportConfig}
+              className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded text-sm"
+            >
+              Exportar JSON
+            </button>
+            <button
+              onClick={importConfig}
+              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded text-sm"
+            >
+              Importar JSON
             </button>
             <button
               onClick={() => {
@@ -2396,10 +2780,11 @@ export function TVViewer() {
           
           {/* Dicas de teclado */}
           <div className="mt-4 text-xs text-gray-400">
-            <p>💡 <strong>Teclas:</strong> C = Alternar modos | R = Reset | O/P = Navegar | T = Travar | U = UDP | S = Salvar</p>
+            <p>💡 <strong>Teclas:</strong> C = Alternar modos | R = Reset | O/P = Navegar | T = Travar | U = UDP | S = Salvar no Servidor | B = Toggle Blur</p>
             <p>💡 <strong>Navegação:</strong> O/P = Movimento horizontal | Scroll trackpad = navegação horizontal</p>
             <p>💡 <strong>UDP:</strong> Envie valores 0-1 para porta 8888 (só em modo operação)</p>
-            <p>💡 <strong>Persistência:</strong> Clique em &quot;Salvar Posições&quot; para salvar | &quot;Limpar Tudo&quot; para resetar</p>
+            <p>💡 <strong>Persistência:</strong> S = Salvar no servidor | Botões para carregar/salvar manualmente</p>
+            <p>💡 <strong>Modal:</strong> Clique em qualquer lugar da imagem para fechar o modal</p>
             
           </div>
         </div>
@@ -2414,7 +2799,7 @@ export function TVViewer() {
           >
             {/* Overlay com blur */}
             <div 
-              className="absolute inset-0 bg-black/30 backdrop-blur-lg"
+              className={`absolute inset-0 bg-black/30 ${isBlurEnabled ? 'backdrop-blur-lg' : ''}`}
               onClick={() => {
                 console.log('🚪 FECHANDO MODAL MANUALMENTE (overlay)');
                 closeModalWithAnimation();
@@ -2422,19 +2807,13 @@ export function TVViewer() {
             ></div>
             
             {/* Conteúdo do modal */}
-            <div className="relative w-[80vw] h-[80vh] bg-transparent rounded-lg overflow-hidden z-10">
-              {/* Botão de fechar */}
-              <button
-                onClick={() => {
-                  console.log('🚪 FECHANDO MODAL MANUALMENTE (botão X principal)');
-                  closeModalWithAnimation();
-                }}
-                className="absolute top-4 right-4 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full transition-all duration-200 z-50"
-                aria-label="Fechar modal"
-              >
-                <X size={20} />
-              </button>
-              
+            <div 
+              className="relative w-[80vw] h-[80vh] bg-transparent rounded-lg overflow-hidden z-10 cursor-pointer"
+              onClick={() => {
+                console.log('🚪 FECHANDO MODAL MANUALMENTE (clique na imagem)');
+                closeModalWithAnimation();
+              }}
+            >
               {/* Conteúdo */}
               <div className="w-full h-full">
                 <BulletAnimation 
