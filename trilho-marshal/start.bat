@@ -7,6 +7,18 @@ echo 📡 Servidor WebSocket: porta 8081
 echo 🌐 Aplicação Next.js: porta 3000 (Produção)
 echo 📡 Servidor UDP: porta 8888
 echo.
+echo Escolha o modo de execução:
+echo [1] Modo normal (navegador padrão)
+echo [2] Modo kiosk (Chrome em tela cheia)
+echo.
+set /p choice="Digite sua escolha (1 ou 2): "
+
+if "%choice%"=="2" (
+    echo.
+    echo 🖥️  Iniciando em modo kiosk...
+    call start-kiosk.bat
+    goto :eof
+)
 
 REM Verificar se as dependências estão instaladas
 if not exist "node_modules" (

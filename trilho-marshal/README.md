@@ -37,6 +37,7 @@ Uma aplicação interativa que simula um trilho com uma TV sobre uma parede, per
 - **Node.js** (versão 18 ou superior)
 - **npm** (geralmente vem com o Node.js)
 - **Git** (para clonar o repositório)
+- **Google Chrome** (para modo kiosk no Windows)
 
 ### 1. Clonar o Repositório
 
@@ -87,6 +88,23 @@ O servidor estará disponível em:
 - **WebSocket**: Porta 8081
 
 **Nota**: O servidor WebSocket é obrigatório para o controle UDP funcionar.
+
+### 5. Modo Kiosk (Windows)
+
+Para ambientes de quiosque ou displays públicos:
+
+```bash
+# Executar em modo kiosk (Chrome em tela cheia)
+npm run start-kiosk
+
+# Configurar sistema para modo kiosk (desabilita gestos, atalhos, etc.)
+npm run setup-kiosk
+
+# Reverter configurações de kiosk
+npm run revert-kiosk
+```
+
+**📖 Documentação completa do modo kiosk:** [KIOSK.md](KIOSK.md)
 
 ## 🎮 Controles
 
