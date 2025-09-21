@@ -40,40 +40,114 @@ npm install
 
 ### 3. Executar a Aplicação
 
-#### Opção A: Execução Simples (Apenas a aplicação)
+#### 🔧 **Desenvolvimento**
 ```bash
+# Apenas a aplicação Next.js
 npm run dev
+
+# Aplicação + WebSocket + UDP
+npm run start-all
 ```
 
-#### Opção B: Execução Completa (Recomendado)
+#### 🚀 **Produção**
 ```bash
-# Linux/Mac
+# Instalar dependências e criar build de produção
+npm run install-prod
+
+# Executar em produção
+# Linux/macOS
 ./start.sh
 
 # Windows
 start.bat
 
 # Ou usando npm
-npm run start-all
+npm run start-prod
 ```
+
+#### 📦 **Scripts de Produção Disponíveis**
+```bash
+npm run build-prod       # Criar build de produção
+npm run start-prod       # Executar em produção
+npm run deploy           # Build + Start produção
+npm run install-prod     # Instalar + Build produção
+```
+
+### 4. Acesso à Aplicação
 
 A aplicação estará disponível em:
 - **Local**: http://localhost:3000
 - **Rede**: http://[seu-ip]:3000
+- **WebSocket**: ws://localhost:8081
+- **UDP**: localhost:8888
 
-### 4. Executar Servidor WebSocket (Obrigatório para UDP)
+### 5. Configuração de Produção
 
-Para controle via UDP, execute em um terminal separado:
+Para personalizar as configurações de produção:
 
 ```bash
-node websocket-server.js
+# Copiar arquivo de configuração
+cp env.example .env.local
+
+# Editar configurações
+nano .env.local
 ```
 
-O servidor estará disponível em:
-- **UDP**: Porta 8888
-- **WebSocket**: Porta 8081
+**Configurações disponíveis:**
+- `PORT` - Porta do servidor Next.js (padrão: 3000)
+- `WEBSOCKET_PORT` - Porta do WebSocket (padrão: 8081)
+- `UDP_PORT` - Porta do UDP (padrão: 8888)
+- `HOST` - Host do servidor
+- `NEXT_PUBLIC_BASE_URL` - URL base da aplicação
 
-**Nota**: O servidor WebSocket é obrigatório para o controle UDP funcionar.
+## 🚀 Guia de Produção
+
+### Início Rápido para Produção
+
+```bash
+# 1. Clonar e navegar para o diretório
+git clone https://github.com/felipebrito/trilho_marshal.git
+cd trilho_marshal/trilho-marshal
+
+# 2. Instalar dependências e criar build
+npm run install-prod
+
+# 3. Executar em produção
+# Linux/macOS
+./start.sh
+
+# Windows
+start.bat
+```
+
+### Verificação de Status
+
+```bash
+# Verificar se os serviços estão rodando
+curl -s -o /dev/null -w "%{http_code}" http://localhost:3000
+lsof -i :8081  # WebSocket
+lsof -i :8888  # UDP
+```
+
+### Deploy em Servidor
+
+1. **Upload dos arquivos** para o servidor
+2. **Instalar dependências**: `npm run install-prod`
+3. **Executar**: `./start.sh` (Linux) ou `start.bat` (Windows)
+
+### Deploy em Container Docker
+
+Para usar com containers, descomente a linha `output: 'standalone'` no `next.config.ts` e use:
+```bash
+node .next/standalone/server.js
+```
+
+### Monitoramento
+
+- **Logs**: Exibidos no console com cores diferentes
+- **Cyan**: Servidor WebSocket+UDP
+- **Green**: Aplicação Next.js
+- **Verbosidade**: Configure `ENABLE_VERBOSE_LOGS=true` no `.env.local`
 
 ## 🎮 Controles
 
@@ -265,28 +339,53 @@ npm install
 
 ## 📝 Scripts Disponíveis
 
+### 🔧 **Desenvolvimento**
 ```bash
-# Execução da aplicação
-npm run dev              # Executar aplicação Next.js
-npm run start-all        # Executar tudo (WebSocket + UDP + Next.js)
-./start.sh               # Script de inicialização (Linux/Mac)
-start.bat                # Script de inicialização (Windows)
+npm run dev              # Executar aplicação Next.js em desenvolvimento
+npm run start-all        # Executar tudo (WebSocket + UDP + Next.js dev)
+```
 
-# Servidores individuais
-npm run websocket-server # Servidor WebSocket (porta 8081)
-npm run udp-server       # Servidor UDP (porta 8888)
+### 🚀 **Produção**
+```bash
+npm run build-prod       # Criar build de produção
+npm run start-prod       # Executar em produção
+npm run deploy           # Build + Start produção
+npm run install-prod     # Instalar + Build produção
+```
 
-# Build e produção
-npm run build            # Build para produção
-npm run start            # Executar build de produção
+### 📦 **Scripts de Inicialização**
+```bash
+./start.sh               # Script de inicialização produção (Linux/Mac)
+start.bat                # Script de inicialização produção (Windows)
+```
 
-# Testes
+### 🔌 **Servidores Individuais**
+```bash
+npm run websocket-server # Servidor WebSocket+UDP (porta 8081+8888)
+```
+
+### 🧪 **Testes**
+```bash
 python test-udp.py       # Testar controle UDP
 python test-websocket.py # Testar WebSocket
+```
 
-# Utilitários
+### 🛠️ **Utilitários**
+```bash
 npm run clean-install    # Reinstalar dependências
 npm run help             # Mostrar ajuda
+```
+
+### 📋 **Comandos de Produção Rápidos**
+```bash
+# Início rápido para produção
+npm run install-prod && ./start.sh
+
+# Apenas build
+npm run build-prod
+
+# Apenas start
+npm run start-prod
 ```
 
 ## 🎨 Personalização
