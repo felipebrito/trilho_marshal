@@ -7,7 +7,7 @@ const nextConfig: NextConfig = {
   },
   
   // Configurações de produção
-  output: 'standalone', // Para deploy em containers
+  // output: 'standalone', // Comentado para evitar conflitos com npm start
   poweredByHeader: false, // Remove header X-Powered-By
   compress: true, // Ativa compressão gzip
   

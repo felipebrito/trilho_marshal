@@ -82,7 +82,7 @@ npm run deploy
 ```
 
 ### Deploy em Container
-O projeto está configurado com `output: 'standalone'` para facilitar deploy em containers Docker.
+Para deploy em containers Docker, descomente a linha `output: 'standalone'` no `next.config.ts` e use `node .next/standalone/server.js` em vez de `npm start`.
 
 ### Deploy em Servidor
 1. Faça upload dos arquivos para o servidor
