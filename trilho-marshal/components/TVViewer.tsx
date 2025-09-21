@@ -3,7 +3,7 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { gsap } from 'gsap';
 import { Draggable } from 'gsap/Draggable';
-import { ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useUDPControl } from '@/hooks/useUDPControl';
 import BulletAnimation from './BulletAnimation';
 import GradualBlur from './GradualBlur';
@@ -1022,126 +1022,6 @@ export function TVViewer() {
   };
 
         // Componente especial para Frame A - Animação sequencial
-        const FrameAAnimation = () => {
-          const [currentStep, setCurrentStep] = useState(0);
-          const animationRef = useRef<HTMLDivElement>(null);
-
-          const images = [
-            '/00_bg.png',   // Fundo
-            '/01_ano.png',  // Ano (1990)
-            '/02_texto.png' // Texto
-          ];
-
-          useEffect(() => {
-            if (!animationRef.current) return;
-
-            // Animação de entrada do modal
-            gsap.fromTo(animationRef.current, 
-              { opacity: 0, scale: 0.8 },
-              { 
-                opacity: 1, 
-                scale: 1, 
-                duration: 0.3, 
-                ease: "power2.out" 
-              }
-            );
-
-            // Sequência de steps para indicadores
-            const stepTimeline = gsap.timeline({ delay: 0.3 });
-            stepTimeline.call(() => setCurrentStep(1), [], 0.2);
-            stepTimeline.call(() => setCurrentStep(2), [], 0.4);
-            stepTimeline.call(() => setCurrentStep(3), [], 0.6);
-
-          }, []);
-
-          return (
-            <div ref={animationRef} className="relative w-full h-full flex items-center justify-center" style={{ backgroundColor: '#fff1ef' }}>
-              {/* Efeito de blur ao redor da imagem */}
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent blur-sm"></div>
-              </div>
-              
-              {/* Imagem de fundo - visível imediatamente */}
-              <img
-                src={images[0]}
-                alt="Background"
-                className="absolute inset-0 w-full h-full object-contain z-10"
-              />
-              
-              {/* Imagem do ano com animação CSS */}
-              <div 
-                className="absolute inset-0 w-full h-full z-20"
-                style={{
-                  opacity: currentStep >= 1 ? 1 : 0,
-                  filter: currentStep >= 1 ? 'blur(0px)' : 'blur(20px)',
-                  transform: currentStep >= 1 ? 'scale(1)' : 'scale(1.05)',
-                  transition: 'opacity 0.4s ease-out, filter 0.4s ease-out, transform 0.4s ease-out'
-                }}
-              >
-                <img
-                  src={images[1]}
-                  alt="Ano 1990"
-                  className="w-full h-full object-contain"
-                />
-              </div>
-              
-              {/* Imagem do texto com animação CSS */}
-              <div 
-                className="absolute inset-0 w-full h-full z-30"
-                style={{
-                  opacity: currentStep >= 2 ? 1 : 0,
-                  filter: currentStep >= 2 ? 'blur(0px)' : 'blur(20px)',
-                  transform: currentStep >= 2 ? 'scale(1)' : 'scale(1.05)',
-                  transition: 'opacity 0.4s ease-out, filter 0.4s ease-out, transform 0.4s ease-out'
-                }}
-              >
-                <img
-                  src={images[2]}
-                  alt="Texto descritivo"
-                  className="w-full h-full object-contain"
-                />
-              </div>
-
-              {/* Indicadores de progresso */}
-              <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-3">
-                {images.map((_, index) => (
-                  <div
-                    key={index}
-                    className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                      index < currentStep ? 'bg-white' : 'bg-white/30'
-                    }`}
-                  />
-                ))}
-              </div>
-
-              {/* Botão de fechar */}
-              <button
-                onClick={() => {
-                  console.log('🚪 FECHANDO MODAL MANUALMENTE (botão X)');
-                  setIsModalOpen(false);
-                  setSelectedBullet(null);
-                }}
-                className="absolute top-4 right-4 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full transition-all duration-200 z-10"
-              >
-                <X size={20} />
-              </button>
-
-              {/* Botão de teste para debug */}
-              <button
-                onClick={() => {
-                  console.log('🧪 TESTE: Forçando re-render');
-                  setCurrentStep(0);
-                  setTimeout(() => setCurrentStep(1), 100);
-                  setTimeout(() => setCurrentStep(2), 200);
-                  setTimeout(() => setCurrentStep(3), 300);
-                }}
-                className="absolute top-4 left-4 bg-red-500 hover:bg-red-600 text-white p-2 rounded text-xs z-10"
-              >
-                TESTE
-              </button>
-            </div>
-          );
-        };
 
   // Componente de animação sequencial para Bullets (memoizado)
 
@@ -2423,20 +2303,14 @@ export function TVViewer() {
             
             {/* Conteúdo do modal */}
             <div className="relative w-[80vw] h-[80vh] bg-transparent rounded-lg overflow-hidden z-10">
-              {/* Botão de fechar */}
-              <button
+              {/* Conteúdo clicável para fechar */}
+              <div 
+                className="w-full h-full cursor-pointer"
                 onClick={() => {
-                  console.log('🚪 FECHANDO MODAL MANUALMENTE (botão X principal)');
+                  console.log('🚪 FECHANDO MODAL MANUALMENTE (clique na imagem)');
                   closeModalWithAnimation();
                 }}
-                className="absolute top-4 right-4 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full transition-all duration-200 z-50"
-                aria-label="Fechar modal"
               >
-                <X size={20} />
-              </button>
-              
-              {/* Conteúdo */}
-              <div className="w-full h-full">
                 <BulletAnimation 
                   key={`${selectedBullet.id}-${isModalOpen}`} 
                   bullet={selectedBullet} 
