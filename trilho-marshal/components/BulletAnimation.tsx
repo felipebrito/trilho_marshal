@@ -3,12 +3,13 @@ import { gsap } from 'gsap';
 
 interface Bullet {
   id: string;
-  label: string;
   x: number;
   y: number;
+  radius: number;
+  folder: string;
+  label: string;
   size: number;
   color: string;
-  folder: string;
 }
 
 interface BulletAnimationProps {
