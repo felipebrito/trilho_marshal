@@ -53,7 +53,7 @@ export function TVViewer() {
   console.log('🚀 TVViewer component carregado!');
   
   
-  const [mode, setMode] = useState<'calibration' | 'operation'>('calibration');
+  const [mode, setMode] = useState<'calibration' | 'operation'>('operation');
   const [calibration, setCalibration] = useState<CalibrationData>({
     scale: 1.0,
     offsetX: 0,
@@ -879,6 +879,19 @@ export function TVViewer() {
     setIsModalOpen(true);
   };
 
+  // Função para tocar som de clique
+  const playClickSound = () => {
+    try {
+      const audio = new Audio('/sounds/bullet-click.wav');
+      audio.volume = 0.3; // Volume baixo para não ser muito alto
+      audio.play().catch(error => {
+        console.log('🔇 Erro ao tocar som:', error);
+      });
+    } catch (error) {
+      console.log('🔇 Erro ao criar áudio:', error);
+    }
+  };
+
   // Função para clicar em um bullet
   const handleBulletClick = (bullet: Bullet) => {
     const now = Date.now();
@@ -898,6 +911,9 @@ export function TVViewer() {
       isBackgroundLocked,
       isModalOpen,
     });
+    
+    // Tocar som de clique
+    playClickSound();
     
     // Se o background estiver travado, selecionar bullet para controle por teclas
     if (isBackgroundLocked) {
@@ -1745,22 +1761,14 @@ export function TVViewer() {
           />
         )}
 
-        {/* Info Display */}
-        <div className="absolute left-4 top-4 px-3 py-2 bg-black/60 border border-gray-600 rounded-full text-white text-sm backdrop-blur-sm z-10">
-          {calibration.imageWidth}×{calibration.imageHeight} • escala {Math.round(calibration.scale * 100)}% • pos {calibration.position.toFixed(1)}% • off {calibration.offsetX} / {calibration.offsetY}
-        </div>
-
-        {/* Operation Mode HUD */}
-        {mode === 'operation' && (
-          <div className="absolute top-4 right-4 px-3 py-2 bg-black/60 border border-gray-600 rounded-full text-white text-sm backdrop-blur-sm z-10">
-            • pos {calibration.position.toFixed(1)}% — • tecla <b>C</b> para Controles — • <b>← →</b> para navegar
-            {isUDPActive && (
-              <span className="ml-2">
-                — • UDP {isConnected ? '🟢' : '🔴'}
-              </span>
-            )}
+        {/* Info Display - só aparece em modo calibração */}
+        {mode === 'calibration' && (
+          <div className="absolute left-4 top-4 px-3 py-2 bg-black/60 border border-gray-600 rounded-full text-white text-sm backdrop-blur-sm z-10">
+            {calibration.imageWidth}×{calibration.imageHeight} • escala {Math.round(calibration.scale * 100)}% • pos {calibration.position.toFixed(1)}% • off {calibration.offsetX} / {calibration.offsetY}
           </div>
         )}
+
+        {/* Operation Mode HUD - removido para interface limpa */}
       </div>
 
       {/* Calibration Panel */}

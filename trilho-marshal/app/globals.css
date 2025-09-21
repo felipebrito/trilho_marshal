@@ -267,3 +267,47 @@ body {
 .target-zone .animate-pulse {
   animation: pulse-glow 2s ease-in-out infinite;
 }
+
+/* Esconder o badge do Next.js Dev Tools */
+[data-next-badge] {
+  display: none !important;
+}
+
+#next-logo {
+  display: none !important;
+}
+
+/* Esconder indicadores de desenvolvimento do Next.js */
+[data-nextjs-dev-tools-button] {
+  display: none !important;
+}
+
+/* Esconder todos os elementos do Next.js Dev Tools */
+[data-nextjs-dev-tools] {
+  display: none !important;
+}
+
+/* Esconder o badge do Next.js em produção */
+.__nextjs_original-stack-filename {
+  display: none !important;
+}
+
+/* Esconder indicadores de build do Next.js */
+[data-nextjs-build-indicator] {
+  display: none !important;
+}
+
+/* Esconder qualquer elemento com atributos do Next.js Dev Tools */
+[data-next-mark] {
+  display: none !important;
+}
+
+/* Esconder o botão do Next.js Dev Tools */
+button[data-nextjs-dev-tools-button] {
+  display: none !important;
+}
+
+/* Esconder o container do badge */
+div[data-next-badge] {
+  display: none !important;
+}
