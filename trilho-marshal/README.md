@@ -4,19 +4,31 @@ Uma aplicação interativa que simula um trilho com uma TV sobre uma parede, per
 
 ## ✨ Novidades da Versão Atual
 
-- **Efeito de gradual blur nas laterais** para sensação de lupa/realidade aumentada
-- **Fechamento automático de modal** com detecção de movimento UDP em tempo real
-- **Animações GSAP suaves** para entrada e saída do modal (fade in/out)
-- **Controle UDP em tempo real** com WebSocket para máxima responsividade
-- **Sistema de bullets configuráveis** com posições, tamanhos e cores personalizáveis
-- **Animações sequenciais** melhoradas com transições suaves
-- **Sistema de debug** visual para desenvolvimento
-- **Controle de teclado** para bullets quando background travado
-- **Persistência de dados** com salvamento manual
-- **Modal customizado** com blur funcional ao redor
-- **Tratamento de erros** robusto para carregamento de imagens
-- **Fundo personalizado** (#fff1ef) para melhor contraste
-- **Performance otimizada** com CSS transitions e GSAP
+- **🎛️ Controles de calibração avançados** com botões +/- e input direto para todos os sliders
+- **💾 Persistência de dados robusta** com APIs REST e fallback para localStorage
+- **🎨 Controle de blur dinâmico** (tecla B e botão na interface)
+- **🚪 Modal melhorado** sem botão fechar, fecha ao clicar na imagem
+- **📤 Export/Import JSON** para transferir configurações entre máquinas
+- **⌨️ Teclas de atalho expandidas** (S para salvar, B para blur, etc.)
+- **🔄 Backup automático** com criação de backups antes de importar
+- **📊 Validação de dados** para evitar configurações inválidas
+- **🎯 Interface intuitiva** com controles visuais claros
+- **⚡ Performance otimizada** com renderização condicional
+- **🔧 APIs REST completas** para gerenciamento de configurações
+- **📱 Layout responsivo** com controles adaptáveis
+- **🎨 Efeito de gradual blur nas laterais** para sensação de lupa/realidade aumentada
+- **🚀 Fechamento automático de modal** com detecção de movimento UDP em tempo real
+- **✨ Animações GSAP suaves** para entrada e saída do modal (fade in/out)
+- **🌐 Controle UDP em tempo real** com WebSocket para máxima responsividade
+- **🎯 Sistema de bullets configuráveis** com posições, tamanhos e cores personalizáveis
+- **🎬 Animações sequenciais** melhoradas com transições suaves
+- **🐛 Sistema de debug** visual para desenvolvimento
+- **⌨️ Controle de teclado** para bullets quando background travado
+- **💾 Persistência de dados** com salvamento manual
+- **🎨 Modal customizado** com blur funcional ao redor
+- **🛡️ Tratamento de erros** robusto para carregamento de imagens
+- **🎨 Fundo personalizado** (#fff1ef) para melhor contraste
+- **⚡ Performance otimizada** com CSS transitions e GSAP
 
 ## 🚀 Instalação e Execução
 
@@ -85,8 +97,8 @@ O servidor estará disponível em:
 - **P**: Movimento horizontal para direita
 - **U**: Ativar/desativar controle UDP
 - **T**: Travar/destravar background
-- **S**: Salvar todas as configurações
-- **B**: Abrir configurador de bullets
+- **S**: Salvar todas as configurações no servidor
+- **B**: Ativar/desativar efeito blur
 - **ESC**: Deselecionar bullet (quando background travado)
 - **Setas**: Mover bullet selecionado (quando background travado)
 - **Shift + Setas**: Movimento maior do bullet
@@ -99,9 +111,14 @@ O servidor estará disponível em:
 - **Arrastar**: Ajuste de posição (modo calibração)
 
 ### Painel de Calibração
-- **Salvar Posições**: Salva todas as configurações
-- **Reset Ideal**: Volta para posição ideal
-- **Limpar Tudo**: Remove todas as configurações salvas
+- **🎛️ Controles Avançados**: Botões +/- e input direto para todos os sliders
+- **💾 Salvar no Servidor (S)**: Salva todas as configurações no servidor
+- **📂 Carregar do Servidor**: Carrega configurações do servidor
+- **📤 Exportar JSON**: Exporta configurações para arquivo JSON
+- **📥 Importar JSON**: Importa configurações de arquivo JSON
+- **🔄 Reset Ideal (R)**: Volta para posição ideal
+- **🗑️ Limpar Tudo**: Remove todas as configurações salvas
+- **🎨 Ativar/Desativar Blur**: Controle do efeito blur (tecla B)
 
 ## 🎯 Funcionalidades
 
@@ -133,6 +150,44 @@ O servidor estará disponível em:
 - **Tratamento de erros** para imagens não encontradas
 - **Transições suaves** com fade e blur
 
+## 🔌 APIs REST
+
+### Endpoints Disponíveis
+
+- **POST /api/save-data**: Salva todas as configurações no servidor
+- **GET /api/load-data**: Carrega configurações do servidor
+- **GET /api/export-config**: Exporta configurações como JSON
+- **POST /api/import-config**: Importa configurações de JSON
+- **POST /api/udp-control**: Controle UDP em tempo real
+
+### Formato de Dados
+
+```json
+{
+  "calibration": {
+    "scale": 0.37,
+    "position": 0,
+    "offsetX": 176,
+    "offsetY": 189,
+    "imageWidth": 17008,
+    "imageHeight": 11339
+  },
+  "frames": [...],
+  "bullets": [...],
+  "isBackgroundLocked": false,
+  "isUDPActive": false,
+  "mode": "calibration",
+  "isBlurEnabled": true,
+  "timestamp": "2024-01-20T10:30:00.000Z"
+}
+```
+
+### Backup Automático
+
+- **Arquivo principal**: `data/app-data.json`
+- **Backups**: `data/app-data-backup-[timestamp].json`
+- **Fallback**: localStorage do navegador
+
 ## 📁 Estrutura de Arquivos
 
 ```
@@ -141,8 +196,19 @@ trilho-marshal/
 │   ├── page.tsx              # Página principal
 │   ├── globals.css           # Estilos globais
 │   └── api/
-│       └── udp-control/      # API para controle UDP
+│       ├── udp-control/      # API para controle UDP
+│       │   └── route.ts
+│       ├── save-data/        # API para salvar dados
+│       │   └── route.ts
+│       ├── load-data/        # API para carregar dados
+│       │   └── route.ts
+│       ├── export-config/    # API para exportar JSON
+│       │   └── route.ts
+│       └── import-config/    # API para importar JSON
 │           └── route.ts
+├── data/                     # Dados persistentes
+│   ├── app-data.json         # Configurações principais
+│   └── app-data-backup-*.json # Backups automáticos
 ├── components/
 │   ├── TVViewer.tsx          # Componente principal
 │   ├── FadeContent.tsx       # Componente de animações
@@ -168,9 +234,12 @@ trilho-marshal/
 ## 🔧 Configuração
 
 ### Persistência de Dados
-- As configurações são salvas no `localStorage` do navegador
-- **Salvamento**: Manual via botão "Salvar Posições"
-- **Carregamento**: Automático na inicialização
+- **Servidor**: Configurações salvas em `data/app-data.json`
+- **Backup**: Criação automática de backups antes de importar
+- **Fallback**: localStorage do navegador se servidor indisponível
+- **Salvamento**: Manual via botão "Salvar no Servidor (S)" ou tecla S
+- **Carregamento**: Automático na inicialização do servidor
+- **Export/Import**: Transferir configurações entre máquinas via JSON
 - **Reset**: Tecla R ou botão "Reset Ideal"
 
 ### Controle UDP
