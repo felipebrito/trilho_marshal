@@ -8,6 +8,7 @@ import { useUDPControl } from '@/hooks/useUDPControl';
 import BulletAnimation from './BulletAnimation';
 import GradualBlur from './GradualBlur';
 import KeyboardTips from './KeyboardTips';
+import ChromaticAberrationFinal from './ChromaticAberrationFinal';
 
 // Registrar o plugin Draggable
 gsap.registerPlugin(Draggable);
@@ -206,6 +207,7 @@ export function TVViewer() {
   // Estados para controles visuais
   const [pulseSpeed, setPulseSpeed] = useState(1.5); // Velocidade de pulsação em segundos
   const [isBlurEnabled, setIsBlurEnabled] = useState(true); // Controle do efeito blur
+  const [isChromaticEnabled, setIsChromaticEnabled] = useState(false); // Controle da aberração cromática
   
   // Estado para controle de cliques e movimento
   const lastClickTime = useRef<number>(0);
@@ -357,6 +359,7 @@ export function TVViewer() {
       originalImageDimensions, // Salvar dimensões originais da imagem
       pulseSpeed, // Salvar velocidade de pulsação
       isBlurEnabled, // Salvar estado do blur
+      isChromaticEnabled, // Salvar estado da aberração cromática
       timestamp: new Date().toISOString()
     };
     
@@ -993,6 +996,12 @@ export function TVViewer() {
           console.log('✅ Estado do blur carregado:', config.isBlurEnabled);
         }
         
+        // Carregar estado da aberração cromática
+        if (config.isChromaticEnabled !== undefined) {
+          setIsChromaticEnabled(config.isChromaticEnabled);
+          console.log('✅ Estado da aberração cromática carregado:', config.isChromaticEnabled);
+        }
+        
         console.log('🎉 Todas as configurações carregadas com sucesso!');
       } catch (error) {
         console.error('❌ Erro ao carregar configurações:', error);
@@ -1429,6 +1438,16 @@ export function TVViewer() {
               return newState;
             });
           }
+          
+          if (e.key.toLowerCase() === 'x') {
+            // Toggle chromatic aberration ativo/inativo
+            setIsChromaticEnabled(prev => {
+              const newState = !prev;
+              console.log(`🌈 Aberração cromática ${newState ? 'ativada' : 'desativada'}`);
+              console.log('🌈 Estado atual do isChromaticEnabled:', newState);
+              return newState;
+            });
+          }
 
         // Se estiver travado e tiver bullet selecionado, controlar bullet
         if (isBackgroundLocked && selectedBulletForControl) {
@@ -1651,20 +1670,28 @@ export function TVViewer() {
             height: `${Math.max(1920, calibration.imageHeight)}px`,
           }}
         >
-          {/* Background Image */}
-          <img
-            ref={imgRef}
-            id="img"
-            src="/bg300x200-comtv.jpg"
-            alt="Background"
+          {/* Background Image with Chromatic Aberration */}
+          {console.log('🌈 Renderizando ChromaticAberrationInline com enabled:', isChromaticEnabled)}
+          <ChromaticAberrationFinal
+            enabled={isChromaticEnabled}
+            intensity={0.8}
+            animationSpeed={1.5}
             className="absolute top-0 left-0 w-auto h-auto max-w-none max-h-none"
-            onLoad={handleImageLoad}
-            style={{ 
-              imageRendering: 'auto',
-              width: `${calibration.imageWidth}px`,
-              height: `${calibration.imageHeight}px`
-            }}
-          />
+          >
+            <img
+              ref={imgRef}
+              id="img"
+              src="/bg300x200-comtv.jpg"
+              alt="Background"
+              className="w-auto h-auto max-w-none max-h-none"
+              onLoad={handleImageLoad}
+              style={{ 
+                imageRendering: 'auto',
+                width: `${calibration.imageWidth}px`,
+                height: `${calibration.imageHeight}px`
+              }}
+            />
+          </ChromaticAberrationFinal>
           
           {/* Frames */}
           {/* <div id="frames" className="absolute inset-0 pointer-events-auto">
@@ -1820,6 +1847,9 @@ export function TVViewer() {
         {mode === 'calibration' && (
           <div className={`absolute left-4 top-4 px-3 py-2 bg-black/60 border border-gray-600 rounded-full text-white text-sm z-10 ${isBlurEnabled ? 'backdrop-blur-sm' : ''}`}>
             {calibration.imageWidth}×{calibration.imageHeight} • escala {Math.round(calibration.scale * 100)}% • pos {calibration.position.toFixed(1)}% • off {calibration.offsetX} / {calibration.offsetY}
+            <div className="text-xs mt-1 opacity-75">
+              Blur: {isBlurEnabled ? 'ON' : 'OFF'} • Chromatic: {isChromaticEnabled ? 'ON' : 'OFF'}
+            </div>
           </div>
         )}
 
@@ -2564,6 +2594,19 @@ export function TVViewer() {
                     className={`px-3 py-1 rounded text-xs ${isBlurEnabled ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'} text-white`}
                   >
                     {isBlurEnabled ? 'Desativar Blur' : 'Ativar Blur'}
+                  </button>
+                </div>
+
+                {/* Controle de Aberração Cromática */}
+                <div>
+                  <label className="text-xs text-gray-300 block mb-1">
+                    Aberração Cromática: {isChromaticEnabled ? 'Ativada' : 'Desativada'} (Tecla X)
+                  </label>
+                  <button
+                    onClick={() => setIsChromaticEnabled(!isChromaticEnabled)}
+                    className={`px-3 py-1 rounded text-xs ${isChromaticEnabled ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'} text-white`}
+                  >
+                    {isChromaticEnabled ? 'Desativar Chromatic' : 'Ativar Chromatic'}
                   </button>
                 </div>
               </div>
